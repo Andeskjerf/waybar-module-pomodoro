@@ -13,5 +13,6 @@
 	},
 	"exec": "path-to-binary",
 	"on-click": "path-to-binary toggle",
+	"on-click-right": "path-to-binary reset",
 },
 ```

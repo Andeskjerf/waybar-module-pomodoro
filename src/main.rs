@@ -12,6 +12,9 @@ const SLEEP_TIME: u16 = 1;
 const SLEEP_DURATION: Duration = Duration::from_secs(SLEEP_TIME as u64);
 const MINUTE: u16 = 60;
 const MAX_ITERATIONS: u8 = 4;
+const WORK_TIME: u16 = 25 * MINUTE;
+const SHORT_BREAK_TIME: u16 = 5 * MINUTE;
+const LONG_BREAK_TIME: u16 = 15 * MINUTE;
 
 struct State {
     current_index: usize,
@@ -26,8 +29,7 @@ impl State {
         State {
             current_index: 0,
             elapsed_time: 0,
-            // work time, break time, rest time
-            times: [1 * MINUTE, 1 * MINUTE, 15 * MINUTE],
+            times: [WORK_TIME, SHORT_BREAK_TIME, LONG_BREAK_TIME],
             iterations: 0,
             running: false,
         }
