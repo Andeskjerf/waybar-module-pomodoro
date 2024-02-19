@@ -47,10 +47,11 @@ impl State {
             // we don't want to get the last break time until we've done 4 pomodoro cycles
             self.current_index = (self.current_index + 1) % 2;
             self.elapsed_time = 0;
+            // stop the timer and wait for user to start next cycle
+            self.running = false;
             // only increment iterations once we've had a short break and are back to work
             if self.current_index == 0 {
                 self.iterations += 1;
-                self.running = false;
             }
         }
 
@@ -111,8 +112,16 @@ fn handle_client(rx: Receiver<String>) {
 
         let value = format_time(state.elapsed_time, state.get_current_time());
         let value_prefix = if state.running { "⏸ " } else { "▶ " };
-        let tooltip = if state.iterations == 0 { "Running" } else { "Stopped" };
-        let class = if state.iterations == 0 { "running" } else { "stopped" };
+        let tooltip = if state.iterations == 0 {
+            "Running"
+        } else {
+            "Stopped"
+        };
+        let class = if state.iterations == 0 {
+            "running"
+        } else {
+            "stopped"
+        };
         state.update_state();
         print_message(
             value_prefix.clone().to_string() + value.clone().as_str(),
