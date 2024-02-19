@@ -74,6 +74,13 @@ fn format_time(elapsed_time: u16, max_time: u16) -> String {
     format!("{:02}:{:02}", minute, second)
 }
 
+fn print_message(value: String, tooltip: &str, class: &str) {
+    println!(
+        "{{\"text\": \"{}\", \"tooltip\": \"{}\", \"class\": \"{}\", \"alt\": \"{}\"}}",
+        value, tooltip, class, class
+    );
+}
+
 fn handle_client(rx: Receiver<String>) {
     let mut state = State::new();
 
@@ -99,14 +106,16 @@ fn handle_client(rx: Receiver<String>) {
             Err(_) => {}
         }
 
+        let value = format_time(state.elapsed_time, state.get_current_time());
+        let tooltip = if state.running { "Running" } else { "Stopped" };
+        let class = if state.running { "running" } else { "stopped" };
+        state.update_state();
+        print_message(value, tooltip, class);
+
         if !state.running {
+            std::thread::sleep(SLEEP_DURATION);
             continue;
         }
-
-        state.update_state();
-
-        let value = format_time(state.elapsed_time, state.get_current_time());
-        println!("{{\"text\": \"{}\"}}", value);
 
         state.increment_time();
         std::thread::sleep(SLEEP_DURATION);
