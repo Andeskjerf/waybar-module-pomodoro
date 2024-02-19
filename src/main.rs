@@ -114,12 +114,10 @@ fn handle_client(rx: Receiver<String>) {
         state.update_state();
         print_message(value, tooltip, class);
 
-        if !state.running {
-            std::thread::sleep(SLEEP_DURATION);
-            continue;
+        if state.running {
+            state.increment_time();
         }
 
-        state.increment_time();
         std::thread::sleep(SLEEP_DURATION);
     }
 }
