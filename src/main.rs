@@ -86,10 +86,15 @@ fn handle_client(rx: Receiver<String>) {
                 "stop" => {
                     state.running = false;
                 }
+                "toggle" => {
+                    state.running = !state.running;
+                }
                 "reset" => {
                     state.reset();
                 }
-                _ => {}
+                _ => {
+                    println!("Unknown message: {}", message);
+                }
             },
             Err(_) => {}
         }
@@ -148,19 +153,7 @@ fn main() -> std::io::Result<()> {
 
     let mut stream = UnixStream::connect(&socket_path)?;
     let opt = &args[1];
-
-    match opt.as_str() {
-        "start" => {
-            stream.write_all(b"start")?;
-        }
-        "stop" => {
-            stream.write_all(b"stop")?;
-        }
-        "reset" => {
-            stream.write_all(b"reset")?;
-        }
-        _ => {}
-    }
+    stream.write_all(opt.as_bytes())?;
 
     Ok(())
 }
