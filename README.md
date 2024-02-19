@@ -8,8 +8,8 @@
 	"format": "{} {icon}",
 	"return-type": "json",
 	"format-icons": {
-		"running": "󰔟",
-		"stopped": "",
+		"work": "󰔟",
+		"break": "",
 	},
 	"exec": "path-to-binary",
 	"on-click": "path-to-binary toggle",

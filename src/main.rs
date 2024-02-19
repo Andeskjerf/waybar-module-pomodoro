@@ -112,15 +112,11 @@ fn handle_client(rx: Receiver<String>) {
 
         let value = format_time(state.elapsed_time, state.get_current_time());
         let value_prefix = if state.running { "⏸ " } else { "▶ " };
-        let tooltip = if state.iterations == 0 {
-            "Running"
+        let tooltip = if state.running { "Running" } else { "Stopped" };
+        let class = if state.current_index == 0 {
+            "work"
         } else {
-            "Stopped"
-        };
-        let class = if state.iterations == 0 {
-            "running"
-        } else {
-            "stopped"
+            "break"
         };
         state.update_state();
         print_message(
