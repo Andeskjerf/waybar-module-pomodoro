@@ -9,7 +9,7 @@
 	"return-type": "json",
 	"format-icons": {
 		"running": "󰔟",
-		"stopped": "󱦠",
+		"stopped": "",
 	},
 	"exec": "path-to-binary",
 	"on-click": "path-to-binary toggle",

@@ -50,6 +50,7 @@ impl State {
             // only increment iterations once we've had a short break and are back to work
             if self.current_index == 0 {
                 self.iterations += 1;
+                self.running = false;
             }
         }
 
@@ -109,10 +110,15 @@ fn handle_client(rx: Receiver<String>) {
         }
 
         let value = format_time(state.elapsed_time, state.get_current_time());
-        let tooltip = if state.running { "Running" } else { "Stopped" };
-        let class = if state.running { "running" } else { "stopped" };
+        let value_prefix = if state.running { "⏸ " } else { "▶ " };
+        let tooltip = if state.iterations == 0 { "Running" } else { "Stopped" };
+        let class = if state.iterations == 0 { "running" } else { "stopped" };
         state.update_state();
-        print_message(value, tooltip, class);
+        print_message(
+            value_prefix.clone().to_string() + value.clone().as_str(),
+            tooltip,
+            class,
+        );
 
         if state.running {
             state.increment_time();
