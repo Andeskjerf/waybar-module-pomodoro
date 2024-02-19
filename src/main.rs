@@ -1,4 +1,12 @@
-use std::time::Duration;
+use std::{
+    env, fs,
+    io::{Read, Write},
+    os::unix::net::{UnixListener, UnixStream},
+    path::Path,
+    sync::mpsc::{Receiver, Sender},
+    thread,
+    time::Duration,
+};
 
 const SLEEP_TIME: u16 = 1;
 const SLEEP_DURATION: Duration = Duration::from_secs(SLEEP_TIME as u64);
@@ -10,6 +18,7 @@ struct State {
     elapsed_time: u16,
     times: [u16; 3],
     iterations: u8,
+    running: bool,
 }
 
 impl State {
@@ -20,7 +29,15 @@ impl State {
             // work time, break time, rest time
             times: [1 * MINUTE, 1 * MINUTE, 15 * MINUTE],
             iterations: 0,
+            running: false,
         }
+    }
+
+    fn reset(&mut self) {
+        self.current_index = 0;
+        self.elapsed_time = 0;
+        self.iterations = 0;
+        self.running = false;
     }
 
     fn update_state(&mut self) {
@@ -32,7 +49,6 @@ impl State {
             if self.current_index == 0 {
                 self.iterations += 1;
             }
-            println!("Iterations: {}", self.iterations);
         }
 
         // if we've done 4 pomodoro cycles, reset iterations and do a long break
@@ -58,10 +74,30 @@ fn format_time(elapsed_time: u16, max_time: u16) -> String {
     format!("{:02}:{:02}", minute, second)
 }
 
-fn main() {
+fn handle_client(rx: Receiver<String>) {
     let mut state = State::new();
 
     loop {
+        match rx.try_recv() {
+            Ok(message) => match message.as_str() {
+                "start" => {
+                    state.running = true;
+                }
+                "stop" => {
+                    state.running = false;
+                }
+                "reset" => {
+                    state.reset();
+                }
+                _ => {}
+            },
+            Err(_) => {}
+        }
+
+        if !state.running {
+            continue;
+        }
+
         state.update_state();
 
         let value = format_time(state.elapsed_time, state.get_current_time());
@@ -70,4 +106,61 @@ fn main() {
         state.increment_time();
         std::thread::sleep(SLEEP_DURATION);
     }
+}
+
+fn spawn_server(socket_path: &String) {
+    // remove old socket if it exists
+    if Path::new(&socket_path).exists() {
+        fs::remove_file(&socket_path).unwrap();
+    }
+
+    let listener = UnixListener::bind(&socket_path).unwrap();
+    let (tx, rx): (Sender<String>, Receiver<String>) = std::sync::mpsc::channel();
+    thread::spawn(|| handle_client(rx));
+
+    for stream in listener.incoming() {
+        match stream {
+            Ok(mut stream) => {
+                // read incoming data
+                let mut message = String::new();
+                stream
+                    .read_to_string(&mut message)
+                    .expect("Failed to read UNIX stream");
+                tx.send(message.clone()).unwrap();
+            }
+            Err(err) => println!("Error: {}", err),
+        }
+    }
+}
+
+fn main() -> std::io::Result<()> {
+    let socket_path: String = format!(
+        "{}/{}.socket",
+        env::temp_dir().display().to_string(),
+        "waybar-module-pomodoro"
+    );
+    let args: Vec<String> = env::args().collect();
+
+    if args.len() == 1 {
+        spawn_server(&socket_path);
+        return Ok(());
+    }
+
+    let mut stream = UnixStream::connect(&socket_path)?;
+    let opt = &args[1];
+
+    match opt.as_str() {
+        "start" => {
+            stream.write_all(b"start")?;
+        }
+        "stop" => {
+            stream.write_all(b"stop")?;
+        }
+        "reset" => {
+            stream.write_all(b"reset")?;
+        }
+        _ => {}
+    }
+
+    Ok(())
 }
