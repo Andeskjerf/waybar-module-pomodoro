@@ -1,3 +1,11 @@
+# What is this?
+
+A pomodoro timer for your system bar, intended for Waybar!
+
+I have not tested other status bars, but hopefully it should also work for others. Waybar accepts a json with various data to display info for a module. If your bar also accepts json, then maybe it'll work the same as it does on Waybar.
+
+Currently, the time is hardcoded. A work cycle is 25 minutes, short break is 5 minutes, and a long break is 15 minutes.
+
 # How to use
 
 * compile & install binary
@@ -25,3 +33,17 @@ Place the file in a folder you have in your $PATH. E.g `/home/user/.local/bin`
 	"on-click-right": "path-to-binary reset",
 },
 ```
+
+# Arguments?
+
+## `start` & `stop`
+
+`start` starts the timer, and `stop` pauses it.
+
+## `toggle`
+
+`toggle` will start the timer if paused, and pause it if it's started.
+
+## `reset`
+
+`reset` resets the timer completely, resetting it to its initial starting state.
