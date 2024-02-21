@@ -50,7 +50,7 @@ impl State {
             // stop the timer and wait for user to start next cycle
             self.running = false;
             // only increment iterations once we've had a short break and are back to work
-            if self.current_index == 0 {
+            if self.current_index == 0 || self.iterations == MAX_ITERATIONS - 1 {
                 self.iterations += 1;
             }
         }
