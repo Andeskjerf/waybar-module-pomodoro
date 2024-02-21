@@ -6,6 +6,8 @@ I have not tested other status bars, but hopefully it should also work for other
 
 Currently, the time is hardcoded. A work cycle is 25 minutes, short break is 5 minutes, and a long break is 15 minutes.
 
+It follows the same rules as pomodoro: 4 cycles of work and short breaks, followed by a long break.
+
 # How to use
 
 * compile & install binary
