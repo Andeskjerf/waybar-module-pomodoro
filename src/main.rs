@@ -44,21 +44,29 @@ impl State {
 
     fn update_state(&mut self) {
         if (self.times[self.current_index] - self.elapsed_time) == 0 {
-            // we don't want to get the last break time until we've done 4 pomodoro cycles
-            self.current_index = (self.current_index + 1) % 2;
+            // if we're on the third iteration and first work, then we want a long break
+            if self.current_index == 0 && self.iterations == MAX_ITERATIONS - 1 {
+                self.current_index = self.times.len() - 1;
+                self.iterations = MAX_ITERATIONS;
+            }
+            // if we've had our long break, reset back to work
+            else if self.current_index == self.times.len() - 1
+                && self.iterations == MAX_ITERATIONS
+            {
+                self.current_index = 0;
+                self.iterations = 0;
+            }
+            // otherwise, run as normal
+            else {
+                self.current_index = (self.current_index + 1) % 2;
+                if self.current_index == 0 {
+                    self.iterations += 1;
+                }
+            }
+
             self.elapsed_time = 0;
             // stop the timer and wait for user to start next cycle
             self.running = false;
-            // only increment iterations once we've had a short break and are back to work
-            if self.current_index == 0 || self.iterations == MAX_ITERATIONS - 1 {
-                self.iterations += 1;
-            }
-        }
-
-        // if we've done 4 pomodoro cycles, reset iterations and do a long break
-        if self.iterations == MAX_ITERATIONS {
-            self.iterations = 0;
-            self.current_index = self.times.len() - 1
         }
     }
 
@@ -89,8 +97,8 @@ fn handle_client(rx: Receiver<String>) {
     let mut state = State::new();
 
     loop {
-        match rx.try_recv() {
-            Ok(message) => match message.as_str() {
+        if let Ok(message) = rx.try_recv() {
+            match message.as_str() {
                 "start" => {
                     state.running = true;
                 }
@@ -106,8 +114,7 @@ fn handle_client(rx: Receiver<String>) {
                 _ => {
                     println!("Unknown message: {}", message);
                 }
-            },
-            Err(_) => {}
+            }
         }
 
         let value = format_time(state.elapsed_time, state.get_current_time());
@@ -120,7 +127,7 @@ fn handle_client(rx: Receiver<String>) {
         };
         state.update_state();
         print_message(
-            value_prefix.clone().to_string() + value.clone().as_str(),
+            value_prefix.to_string() + value.clone().as_str(),
             tooltip,
             class,
         );
@@ -136,10 +143,10 @@ fn handle_client(rx: Receiver<String>) {
 fn spawn_server(socket_path: &String) {
     // remove old socket if it exists
     if Path::new(&socket_path).exists() {
-        fs::remove_file(&socket_path).unwrap();
+        fs::remove_file(socket_path).unwrap();
     }
 
-    let listener = UnixListener::bind(&socket_path).unwrap();
+    let listener = UnixListener::bind(socket_path).unwrap();
     let (tx, rx): (Sender<String>, Receiver<String>) = std::sync::mpsc::channel();
     thread::spawn(|| handle_client(rx));
 
@@ -161,7 +168,7 @@ fn spawn_server(socket_path: &String) {
 fn main() -> std::io::Result<()> {
     let socket_path: String = format!(
         "{}/{}.socket",
-        env::temp_dir().display().to_string(),
+        env::temp_dir().display(),
         "waybar-module-pomodoro"
     );
     let args: Vec<String> = env::args().collect();
