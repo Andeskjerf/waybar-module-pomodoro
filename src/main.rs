@@ -8,8 +8,8 @@ use std::{
     time::Duration,
 };
 
-const SLEEP_TIME: u16 = 1;
-const SLEEP_DURATION: Duration = Duration::from_secs(SLEEP_TIME as u64);
+const SLEEP_TIME: u16 = 100;
+const SLEEP_DURATION: Duration = Duration::from_millis(SLEEP_TIME as u64);
 const MINUTE: u16 = 60;
 const MAX_ITERATIONS: u8 = 4;
 const WORK_TIME: u16 = 25 * MINUTE;
@@ -18,6 +18,7 @@ const LONG_BREAK_TIME: u16 = 15 * MINUTE;
 
 struct State {
     current_index: usize,
+    elapsed_millis: u16,
     elapsed_time: u16,
     times: [u16; 3],
     iterations: u8,
@@ -28,6 +29,7 @@ impl State {
     fn new() -> State {
         State {
             current_index: 0,
+            elapsed_millis: 0,
             elapsed_time: 0,
             times: [WORK_TIME, SHORT_BREAK_TIME, LONG_BREAK_TIME],
             iterations: 0,
@@ -75,7 +77,11 @@ impl State {
     }
 
     fn increment_time(&mut self) {
-        self.elapsed_time += 1;
+        self.elapsed_millis += SLEEP_TIME;
+        if self.elapsed_millis >= 1000 {
+            self.elapsed_millis = 0;
+            self.elapsed_time += 1;
+        }
     }
 }
 
