@@ -29,6 +29,7 @@ struct State {
     elapsed_time: u16,
     times: [u16; 3],
     iterations: u8,
+    session_completed: u8,
     running: bool,
 }
 
@@ -40,6 +41,7 @@ impl State {
             elapsed_time: 0,
             times: [WORK_TIME, SHORT_BREAK_TIME, LONG_BREAK_TIME],
             iterations: 0,
+            session_completed: 0,
             running: false,
         }
     }
@@ -58,12 +60,14 @@ impl State {
                 self.current_index = self.times.len() - 1;
                 self.iterations = MAX_ITERATIONS;
             }
-            // if we've had our long break, reset back to work
+            // if we've had our long break, reset everything and start over
             else if self.current_index == self.times.len() - 1
                 && self.iterations == MAX_ITERATIONS
             {
                 self.current_index = 0;
                 self.iterations = 0;
+                // since we've gone through a long break, we've also completed a single pomodoro!
+                self.session_completed += 1;
             }
             // otherwise, run as normal
             else {
@@ -154,7 +158,15 @@ fn handle_client(rx: Receiver<String>) {
 
         let value = format_time(state.elapsed_time, state.get_current_time());
         let value_prefix = if state.running { "⏸ " } else { "▶ " };
-        let tooltip = if state.running { "Running" } else { "Stopped" };
+        let tooltip = format!(
+            "{} pomodoro{} completed this session",
+            state.session_completed,
+            if state.session_completed > 1 || state.session_completed == 0 {
+                "s"
+            } else {
+                ""
+            }
+        );
         let class = if state.current_index == 0 {
             "work"
         } else {
@@ -163,7 +175,7 @@ fn handle_client(rx: Receiver<String>) {
         state.update_state();
         print_message(
             value_prefix.to_string() + value.clone().as_str(),
-            tooltip,
+            tooltip.as_str(),
             class,
         );
 
