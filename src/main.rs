@@ -1,3 +1,4 @@
+use notify_rust::Notification;
 use std::{
     env, fs,
     io::{Read, Write},
@@ -15,6 +16,12 @@ const MAX_ITERATIONS: u8 = 4;
 const WORK_TIME: u16 = 25 * MINUTE;
 const SHORT_BREAK_TIME: u16 = 5 * MINUTE;
 const LONG_BREAK_TIME: u16 = 15 * MINUTE;
+
+enum CycleType {
+    Work,
+    ShortBreak,
+    LongBreak,
+}
 
 struct State {
     current_index: usize,
@@ -69,6 +76,13 @@ impl State {
             self.elapsed_time = 0;
             // stop the timer and wait for user to start next cycle
             self.running = false;
+
+            send_notification(match self.current_index {
+                0 => CycleType::Work,
+                1 => CycleType::ShortBreak,
+                2 => CycleType::LongBreak,
+                _ => panic!("Invalid cycle type"),
+            });
         }
     }
 
@@ -83,6 +97,21 @@ impl State {
             self.elapsed_time += 1;
         }
     }
+}
+
+fn send_notification(cycle_type: CycleType) {
+    match Notification::new()
+        .summary("Pomodoro")
+        .body(match cycle_type {
+            CycleType::Work => "Time to work!",
+            CycleType::ShortBreak => "Time for a short break!",
+            CycleType::LongBreak => "Time for a long break!",
+        })
+        .show()
+    {
+        Ok(_) => {}
+        Err(_) => panic!("Failed to send notification"),
+    };
 }
 
 fn format_time(elapsed_time: u16, max_time: u16) -> String {
