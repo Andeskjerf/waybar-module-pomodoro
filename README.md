@@ -4,8 +4,6 @@ A pomodoro timer for your system bar, intended for Waybar!
 
 I have not tested other status bars, but hopefully it should also work for others. Waybar accepts a json with various data to display info for a module. If your bar also accepts json, then maybe it'll work the same as it does on Waybar.
 
-Currently, the time is hardcoded. A work cycle is 25 minutes, short break is 5 minutes, and a long break is 15 minutes.
-
 It follows the same rules as pomodoro: 4 cycles of work and short breaks, followed by a long break.
 
 # How to use
@@ -40,16 +38,19 @@ Include the module in your bar and you're set!
 
 You can check how many pomodoros you've completed this session by hovering the module and checking its tooltip.
 
-# Arguments?
+# Options / arguments?
 
-## `start` & `stop`
-
-`start` starts the timer, and `stop` pauses it.
-
-## `toggle`
-
-`toggle` will start the timer if paused, and pause it if it's started.
-
-## `reset`
-
-`reset` resets the timer completely, resetting it to its initial starting state.
+```
+usage: waybar-module-pomodoro [options] [operation]
+    options:
+        -h, --help                  Prints this help message
+        -w, --work <value>          Sets how long a work cycle is, in minutes. default: 25
+        -s, --shortbreak <value>    Sets how long a short break is, in minutes. default: 5
+        -l, --longbreak <value>     Sets how long a long break is, in minutes. default: 15
+        --no-icons                  Disable the pause/play icon
+    operations:
+        toggle                      Toggles the timer
+        start                       Start the timer
+        pause                       Pause the timer
+        reset                       Reset timer to initial state
+```

@@ -1,3 +1,4 @@
+use config::Config;
 use notify_rust::Notification;
 use std::{
     env, fs,
@@ -8,6 +9,8 @@ use std::{
     thread,
     time::Duration,
 };
+
+mod config;
 
 const SLEEP_TIME: u16 = 100;
 const SLEEP_DURATION: Duration = Duration::from_millis(SLEEP_TIME as u64);
@@ -34,12 +37,12 @@ struct State {
 }
 
 impl State {
-    fn new() -> State {
+    fn new(work_time: u16, short_break: u16, long_break: u16) -> State {
         State {
             current_index: 0,
             elapsed_millis: 0,
             elapsed_time: 0,
-            times: [WORK_TIME, SHORT_BREAK_TIME, LONG_BREAK_TIME],
+            times: [work_time, short_break, long_break],
             iterations: 0,
             session_completed: 0,
             running: false,
@@ -132,8 +135,8 @@ fn print_message(value: String, tooltip: &str, class: &str) {
     );
 }
 
-fn handle_client(rx: Receiver<String>) {
-    let mut state = State::new();
+fn handle_client(rx: Receiver<String>, config: Config) {
+    let mut state = State::new(config.work_time, config.short_break, config.long_break);
 
     loop {
         if let Ok(message) = rx.try_recv() {
@@ -157,7 +160,15 @@ fn handle_client(rx: Receiver<String>) {
         }
 
         let value = format_time(state.elapsed_time, state.get_current_time());
-        let value_prefix = if state.running { "⏸ " } else { "▶ " };
+        let value_prefix = if !config.no_icons {
+            if state.running {
+                "⏸ "
+            } else {
+                "▶ "
+            }
+        } else {
+            ""
+        };
         let tooltip = format!(
             "{} pomodoro{} completed this session",
             state.session_completed,
@@ -187,7 +198,7 @@ fn handle_client(rx: Receiver<String>) {
     }
 }
 
-fn spawn_server(socket_path: &String) {
+fn spawn_server(socket_path: &String, config: Config) {
     // remove old socket if it exists
     if Path::new(&socket_path).exists() {
         fs::remove_file(socket_path).unwrap();
@@ -195,7 +206,7 @@ fn spawn_server(socket_path: &String) {
 
     let listener = UnixListener::bind(socket_path).unwrap();
     let (tx, rx): (Sender<String>, Receiver<String>) = std::sync::mpsc::channel();
-    thread::spawn(|| handle_client(rx));
+    thread::spawn(|| handle_client(rx, config));
 
     for stream in listener.incoming() {
         match stream {
@@ -213,21 +224,55 @@ fn spawn_server(socket_path: &String) {
 }
 
 fn main() -> std::io::Result<()> {
+    // valid operations
+    let operations = ["toggle", "start", "stop", "reset"];
+
     let socket_path: String = format!(
         "{}/{}.socket",
         env::temp_dir().display(),
         "waybar-module-pomodoro"
     );
-    let args: Vec<String> = env::args().collect();
 
-    if args.len() == 1 {
-        spawn_server(&socket_path);
+    let options = env::args().skip(1).collect::<Vec<String>>();
+    if options.contains(&"--help".to_string()) || options.contains(&"-h".to_string()) {
+        print_help();
+        return Ok(());
+    }
+
+    let config = Config::from_options(options);
+
+    let operation = env::args()
+        .filter(|x| operations.contains(&x.as_str()))
+        .collect::<Vec<String>>();
+
+    if operation.is_empty() {
+        spawn_server(&socket_path, config);
         return Ok(());
     }
 
     let mut stream = UnixStream::connect(&socket_path)?;
-    let opt = &args[1];
+    let opt = &operation[0];
     stream.write_all(opt.as_bytes())?;
 
     Ok(())
+}
+
+fn print_help() {
+    println!(
+        r#"usage: waybar-module-pomodoro [options] [operation]
+    options:
+        -h, --help                  Prints this help message
+        -w, --work <value>          Sets how long a work cycle is, in minutes. default: {}
+        -s, --shortbreak <value>    Sets how long a short break is, in minutes. default: {}
+        -l, --longbreak <value>     Sets how long a long break is, in minutes. default: {}
+        --no-icons                  Disable the pause/play icon
+    operations:
+        toggle                      Toggles the timer
+        start                       Start the timer
+        pause                       Pause the timer
+        reset                       Reset timer to initial state"#,
+        WORK_TIME / MINUTE,
+        SHORT_BREAK_TIME / MINUTE,
+        LONG_BREAK_TIME / MINUTE
+    );
 }
