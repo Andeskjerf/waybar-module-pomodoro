@@ -1,8 +1,12 @@
 use config::Config;
 use notify_rust::Notification;
+use signal_hook::{
+    consts::{SIGINT, SIGTERM},
+    iterator::Signals,
+};
 use std::{
     env, fs,
-    io::{Read, Write},
+    io::{Error, Read, Write},
     os::unix::net::{UnixListener, UnixStream},
     path::Path,
     sync::mpsc::{Receiver, Sender},
@@ -198,11 +202,14 @@ fn handle_client(rx: Receiver<String>, config: Config) {
     }
 }
 
-fn spawn_server(socket_path: &String, config: Config) {
-    // remove old socket if it exists
+fn delete_socket(socket_path: &str) {
     if Path::new(&socket_path).exists() {
         fs::remove_file(socket_path).unwrap();
     }
+}
+
+fn spawn_server(socket_path: &str, config: Config) {
+    delete_socket(socket_path);
 
     let listener = UnixListener::bind(socket_path).unwrap();
     let (tx, rx): (Sender<String>, Receiver<String>) = std::sync::mpsc::channel();
@@ -216,6 +223,10 @@ fn spawn_server(socket_path: &String, config: Config) {
                 stream
                     .read_to_string(&mut message)
                     .expect("Failed to read UNIX stream");
+                if message.contains("exit") {
+                    delete_socket(socket_path);
+                    break;
+                }
                 tx.send(message.clone()).unwrap();
             }
             Err(err) => println!("Error: {}", err),
@@ -223,14 +234,50 @@ fn spawn_server(socket_path: &String, config: Config) {
     }
 }
 
+fn get_existing_sockets(binary_name: &str) -> Vec<String> {
+    let mut files: Vec<String> = vec![];
+
+    if let Ok(paths) = env::temp_dir().read_dir() {
+        for path in paths {
+            let name = path.unwrap().path().to_str().unwrap().to_string();
+            if name.contains(binary_name) {
+                files.push(name);
+            }
+        }
+    }
+
+    files
+}
+
+fn send_message_socket(socket_path: &str, msg: &str) -> Result<(), Error> {
+    let mut stream = UnixStream::connect(socket_path)?;
+    stream.write_all(msg.as_bytes())?;
+    Ok(())
+}
+
+// we need to handle signals to ensure a graceful exit
+// this is important because we need to remove the sockets on exit
+fn process_signals(socket_path: String) {
+    let mut signals = Signals::new([SIGINT, SIGTERM]).unwrap();
+    thread::spawn(move || {
+        for _ in signals.forever() {
+            send_message_socket(&socket_path, "exit").expect("unable to send message to server");
+        }
+    });
+}
+
 fn main() -> std::io::Result<()> {
     // valid operations
     let operations = ["toggle", "start", "stop", "reset"];
+    let binary_path = env::args().next().unwrap();
+    let binary_name = binary_path.split('/').last().unwrap();
 
+    let mut sockets = get_existing_sockets(binary_name);
     let socket_path: String = format!(
-        "{}/{}.socket",
+        "{}/{}{}.socket",
         env::temp_dir().display(),
-        "waybar-module-pomodoro"
+        binary_name,
+        sockets.len(),
     );
 
     let options = env::args().skip(1).collect::<Vec<String>>();
@@ -246,14 +293,15 @@ fn main() -> std::io::Result<()> {
         .collect::<Vec<String>>();
 
     if operation.is_empty() {
+        sockets.push(socket_path.clone());
+        process_signals(socket_path.clone());
         spawn_server(&socket_path, config);
         return Ok(());
     }
 
-    let mut stream = UnixStream::connect(&socket_path)?;
-    let opt = &operation[0];
-    stream.write_all(opt.as_bytes())?;
-
+    for socket in sockets {
+        send_message_socket(&socket, &operation[0])?;
+    }
     Ok(())
 }
 

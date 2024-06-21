@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 notify-rust = "4.11.0"
+signal-hook = "0.3.17"
