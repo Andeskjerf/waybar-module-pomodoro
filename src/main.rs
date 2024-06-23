@@ -87,13 +87,6 @@ impl State {
             self.elapsed_time = 0;
             // stop the timer and wait for user to start next cycle
             self.running = false;
-
-            send_notification(match self.current_index {
-                0 => CycleType::Work,
-                1 => CycleType::ShortBreak,
-                2 => CycleType::LongBreak,
-                _ => panic!("Invalid cycle type"),
-            });
         }
     }
 
@@ -139,8 +132,16 @@ fn print_message(value: String, tooltip: &str, class: &str) {
     );
 }
 
-fn handle_client(rx: Receiver<String>, config: Config) {
+fn handle_client(rx: Receiver<String>, socket_path: String, config: Config) {
     let mut state = State::new(config.work_time, config.short_break, config.long_break);
+
+    // set initial value to true to ensure it doesn't send a notification when the program starts
+    let mut notification_fired = true;
+
+    let socket_nr = socket_path
+        .chars()
+        .filter_map(|c| c.to_digit(10))
+        .collect::<Vec<u32>>();
 
     loop {
         if let Ok(message) = rx.try_recv() {
@@ -195,7 +196,19 @@ fn handle_client(rx: Receiver<String>, config: Config) {
         );
 
         if state.running {
+            notification_fired = false;
             state.increment_time();
+        }
+        // we only want to fire a notification if the socket connected to this program is the first one created
+        // we don't want to fire a notification for every instance of the timer, like when the user has multiple monitors
+        else if !state.running && socket_nr[0] == 0 && !notification_fired {
+            send_notification(match state.current_index {
+                0 => CycleType::Work,
+                1 => CycleType::ShortBreak,
+                2 => CycleType::LongBreak,
+                _ => panic!("Invalid cycle type"),
+            });
+            notification_fired = true;
         }
 
         std::thread::sleep(SLEEP_DURATION);
@@ -213,7 +226,10 @@ fn spawn_server(socket_path: &str, config: Config) {
 
     let listener = UnixListener::bind(socket_path).unwrap();
     let (tx, rx): (Sender<String>, Receiver<String>) = std::sync::mpsc::channel();
-    thread::spawn(|| handle_client(rx, config));
+    {
+        let socket_path = socket_path.to_owned();
+        thread::spawn(|| handle_client(rx, socket_path, config));
+    }
 
     for stream in listener.incoming() {
         match stream {
@@ -269,24 +285,22 @@ fn process_signals(socket_path: String) {
 fn main() -> std::io::Result<()> {
     // valid operations
     let operations = ["toggle", "start", "stop", "reset"];
-    let binary_path = env::args().next().unwrap();
-    let binary_name = binary_path.split('/').last().unwrap();
 
-    let mut sockets = get_existing_sockets(binary_name);
-    let socket_path: String = format!(
-        "{}/{}{}.socket",
-        env::temp_dir().display(),
-        binary_name,
-        sockets.len(),
-    );
-
-    let options = env::args().skip(1).collect::<Vec<String>>();
+    let options = env::args().collect::<Vec<String>>();
     if options.contains(&"--help".to_string()) || options.contains(&"-h".to_string()) {
         print_help();
         return Ok(());
     }
 
     let config = Config::from_options(options);
+
+    let mut sockets = get_existing_sockets(&config.binary_name);
+    let socket_path: String = format!(
+        "{}/{}{}.socket",
+        env::temp_dir().display(),
+        config.binary_name,
+        sockets.len(),
+    );
 
     let operation = env::args()
         .filter(|x| operations.contains(&x.as_str()))

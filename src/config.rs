@@ -1,10 +1,11 @@
-use crate::{LONG_BREAK_TIME, SHORT_BREAK_TIME, WORK_TIME, MINUTE};
+use crate::{LONG_BREAK_TIME, MINUTE, SHORT_BREAK_TIME, WORK_TIME};
 
 pub struct Config {
     pub work_time: u16,
     pub short_break: u16,
     pub long_break: u16,
     pub no_icons: bool,
+    pub binary_name: String,
 }
 
 impl Config {
@@ -16,8 +17,13 @@ impl Config {
         let mut long_break: u16 = LONG_BREAK_TIME;
         let mut no_icons = false;
 
+        let binary_path = options.first().unwrap();
+        let binary_name = binary_path.split('/').last().unwrap().to_string();
+
         options.iter().for_each(|opt| match opt.as_str() {
-            "-w" | "--work" => work_time = get_config_value(&options, vec!["-w", "--work"]) * MINUTE,
+            "-w" | "--work" => {
+                work_time = get_config_value(&options, vec!["-w", "--work"]) * MINUTE
+            }
             "-s" | "--shortbreak" => {
                 short_break = get_config_value(&options, vec!["-s", "--shortbreak"]) * MINUTE
             }
@@ -33,6 +39,7 @@ impl Config {
             short_break,
             long_break,
             no_icons,
+            binary_name,
         }
     }
 }
