@@ -8,17 +8,19 @@ It follows the same rules as pomodoro: 4 cycles of work and short breaks, follow
 
 # How to use
 
-* compile & install binary
+- compile & install binary
+
 ```bash
 git clone git@github.com:Andeskjerf/waybar-module-pomodoro.git
 cd waybar-module-pomodoro
 cargo build --release
 ```
+
 You can find the binary in `workingDir/target/release/waybar-module-pomodoro`.
 
 Place the file in a folder you have in your $PATH. E.g `/home/user/.local/bin`
-  
-* add to `~/.config/waybar/config`
+
+- add to `~/.config/waybar/config`
 
 ```json
 "custom/pomodoro": {
@@ -55,4 +57,15 @@ usage: waybar-module-pomodoro [options] [operation]
         start                       Start the timer
         pause                       Pause the timer
         reset                       Reset timer to initial state
+```
+
+## CSS Styling
+
+Valid classes:
+
+```
+""          -   timer has not yet been started
+"pause"     -   timer has been paused
+"work"      -   timer is currently in a work cycle
+"break"     -   timer is currently in a break cycle, either a short or long one
 ```
