@@ -23,6 +23,12 @@ const MAX_ITERATIONS: u8 = 4;
 const WORK_TIME: u16 = 25 * MINUTE;
 const SHORT_BREAK_TIME: u16 = 5 * MINUTE;
 const LONG_BREAK_TIME: u16 = 15 * MINUTE;
+// const PLAY_ICON: &str = "";
+// const PAUSE_ICON: &str = "";
+const PLAY_ICON: &str = "▶";
+const PAUSE_ICON: &str = "⏸";
+const WORK_ICON: &str = "󰔟";
+const BREAK_ICON: &str = "";
 
 enum CycleType {
     Work,
@@ -56,6 +62,7 @@ impl State {
     fn reset(&mut self) {
         self.current_index = 0;
         self.elapsed_time = 0;
+        self.elapsed_millis = 0;
         self.iterations = 0;
         self.running = false;
     }
@@ -132,6 +139,31 @@ fn print_message(value: String, tooltip: &str, class: &str) {
     );
 }
 
+fn get_class(state: &State) -> String {
+    // timer hasn't been started yet
+    if state.elapsed_millis == 0
+        && state.elapsed_time == 0
+        && state.iterations == 0
+        && state.session_completed == 0
+    {
+        "".to_owned()
+    }
+    // timer has been paused
+    else if !state.running {
+        "pause".to_owned()
+    }
+    // currently doing some work
+    else if state.current_index == 0 {
+        "work".to_owned()
+    }
+    // currently a break
+    else if state.current_index != 0 {
+        "break".to_owned()
+    } else {
+        panic!("invalid condition occurred while setting class!");
+    }
+}
+
 fn handle_client(rx: Receiver<String>, socket_path: String, config: Config) {
     let mut state = State::new(config.work_time, config.short_break, config.long_break);
 
@@ -167,9 +199,9 @@ fn handle_client(rx: Receiver<String>, socket_path: String, config: Config) {
         let value = format_time(state.elapsed_time, state.get_current_time());
         let value_prefix = if !config.no_icons {
             if state.running {
-                "⏸ "
+                &config.pause_icon
             } else {
-                "▶ "
+                &config.play_icon
             }
         } else {
             ""
@@ -183,14 +215,15 @@ fn handle_client(rx: Receiver<String>, socket_path: String, config: Config) {
                 ""
             }
         );
-        let class = if state.current_index == 0 {
-            "work"
+        let class = &get_class(&state);
+        let cycle_icon = if state.iterations == 0 {
+            &config.work_icon
         } else {
-            "break"
+            &config.break_icon
         };
         state.update_state();
         print_message(
-            value_prefix.to_string() + value.clone().as_str(),
+            format!("{} {} {}", value_prefix, value, cycle_icon),
             tooltip.as_str(),
             class,
         );
@@ -327,7 +360,14 @@ fn print_help() {
         -w, --work <value>          Sets how long a work cycle is, in minutes. default: {}
         -s, --shortbreak <value>    Sets how long a short break is, in minutes. default: {}
         -l, --longbreak <value>     Sets how long a long break is, in minutes. default: {}
+
+        -p, --play <value>          Sets custom play icon/text. default: {}
+        -a, --pause <value>         Sets custom pause icon/text. default: {}
+        -o, --work-icon <value>     Sets custom work icon/text. default: {}
+        -b, --break-icon <value>    Sets custom break icon/text. default: {}
+
         --no-icons                  Disable the pause/play icon
+
     operations:
         toggle                      Toggles the timer
         start                       Start the timer
@@ -335,6 +375,10 @@ fn print_help() {
         reset                       Reset timer to initial state"#,
         WORK_TIME / MINUTE,
         SHORT_BREAK_TIME / MINUTE,
-        LONG_BREAK_TIME / MINUTE
+        LONG_BREAK_TIME / MINUTE,
+        PLAY_ICON,
+        PAUSE_ICON,
+        WORK_ICON,
+        BREAK_ICON,
     );
 }
