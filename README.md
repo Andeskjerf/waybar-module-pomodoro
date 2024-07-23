@@ -24,12 +24,8 @@ Place the file in a folder you have in your $PATH. E.g `/home/user/.local/bin`
 
 ```json
 "custom/pomodoro": {
-	"format": "{} {icon}",
+	"format": "{}",
 	"return-type": "json",
-	"format-icons": {
-		"work": "󰔟",
-		"break": "",
-	},
 	"exec": "waybar-module-pomodoro",
 	"on-click": "waybar-module-pomodoro toggle",
 	"on-click-right": "waybar-module-pomodoro reset",
@@ -49,9 +45,14 @@ usage: waybar-module-pomodoro [options] [operation]
         -w, --work <value>          Sets how long a work cycle is, in minutes. default: 25
         -s, --shortbreak <value>    Sets how long a short break is, in minutes. default: 5
         -l, --longbreak <value>     Sets how long a long break is, in minutes. default: 15
+
         -p, --play <value>          Sets custom play icon/text. default: ▶
         -a, --pause <value>         Sets custom pause icon/text. default: ⏸
+        -o, --work-icon <value>     Sets custom work icon/text. default: 󰔟
+        -b, --break-icon <value>    Sets custom break icon/text. default: 
+
         --no-icons                  Disable the pause/play icon
+
     operations:
         toggle                      Toggles the timer
         start                       Start the timer

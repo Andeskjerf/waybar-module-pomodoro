@@ -1,4 +1,7 @@
-use crate::{LONG_BREAK_TIME, MINUTE, PAUSE_ICON, PLAY_ICON, SHORT_BREAK_TIME, WORK_TIME};
+use crate::{
+    BREAK_ICON, LONG_BREAK_TIME, MINUTE, PAUSE_ICON, PLAY_ICON, SHORT_BREAK_TIME, WORK_ICON,
+    WORK_TIME,
+};
 
 pub struct Config {
     pub work_time: u16,
@@ -7,6 +10,8 @@ pub struct Config {
     pub no_icons: bool,
     pub play_icon: String,
     pub pause_icon: String,
+    pub work_icon: String,
+    pub break_icon: String,
     pub binary_name: String,
 }
 
@@ -20,6 +25,8 @@ impl Config {
         let mut no_icons = false;
         let mut play_icon = PLAY_ICON.to_string();
         let mut pause_icon = PAUSE_ICON.to_string();
+        let mut work_icon = WORK_ICON.to_string();
+        let mut break_icon = BREAK_ICON.to_string();
 
         let binary_path = options.first().unwrap();
         let binary_name = binary_path.split('/').last().unwrap().to_string();
@@ -45,6 +52,12 @@ impl Config {
             }
             "-p" | "--play" => play_icon = get_config_value(&options, vec!["-p", "--play"]),
             "-a" | "--pause" => pause_icon = get_config_value(&options, vec!["-a", "--pause"]),
+            "-o" | "--work-icon" => {
+                work_icon = get_config_value(&options, vec!["-o", "--work-icon"])
+            }
+            "-b" | "--break-icon" => {
+                break_icon = get_config_value(&options, vec!["-b", "--break-icon"])
+            }
             "--no-icons" => no_icons = true,
             _ => (),
         });
@@ -56,6 +69,8 @@ impl Config {
             no_icons,
             play_icon,
             pause_icon,
+            work_icon,
+            break_icon,
             binary_name,
         }
     }

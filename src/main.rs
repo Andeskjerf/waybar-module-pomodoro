@@ -23,8 +23,12 @@ const MAX_ITERATIONS: u8 = 4;
 const WORK_TIME: u16 = 25 * MINUTE;
 const SHORT_BREAK_TIME: u16 = 5 * MINUTE;
 const LONG_BREAK_TIME: u16 = 15 * MINUTE;
+// const PLAY_ICON: &str = "";
+// const PAUSE_ICON: &str = "";
 const PLAY_ICON: &str = "▶";
 const PAUSE_ICON: &str = "⏸";
+const WORK_ICON: &str = "󰔟";
+const BREAK_ICON: &str = "";
 
 enum CycleType {
     Work,
@@ -155,10 +159,8 @@ fn get_class(state: &State) -> String {
     // currently a break
     else if state.current_index != 0 {
         "break".to_owned()
-    }
-    // this shouldn't happen but we still need to handle it
-    else {
-        panic!("invalid condition occurred while trying to set class!")
+    } else {
+        panic!("invalid condition occurred while setting class!");
     }
 }
 
@@ -197,12 +199,12 @@ fn handle_client(rx: Receiver<String>, socket_path: String, config: Config) {
         let value = format_time(state.elapsed_time, state.get_current_time());
         let value_prefix = if !config.no_icons {
             if state.running {
-                format!("{} ", config.pause_icon)
+                &config.pause_icon
             } else {
-                format!("{} ", config.play_icon)
+                &config.play_icon
             }
         } else {
-            "".to_owned()
+            ""
         };
         let tooltip = format!(
             "{} pomodoro{} completed this session",
@@ -214,9 +216,14 @@ fn handle_client(rx: Receiver<String>, socket_path: String, config: Config) {
             }
         );
         let class = &get_class(&state);
+        let cycle_icon = if state.iterations == 0 {
+            &config.work_icon
+        } else {
+            &config.break_icon
+        };
         state.update_state();
         print_message(
-            value_prefix.to_string() + value.clone().as_str(),
+            format!("{} {} {}", value_prefix, value, cycle_icon),
             tooltip.as_str(),
             class,
         );
@@ -353,9 +360,14 @@ fn print_help() {
         -w, --work <value>          Sets how long a work cycle is, in minutes. default: {}
         -s, --shortbreak <value>    Sets how long a short break is, in minutes. default: {}
         -l, --longbreak <value>     Sets how long a long break is, in minutes. default: {}
+
         -p, --play <value>          Sets custom play icon/text. default: {}
         -a, --pause <value>         Sets custom pause icon/text. default: {}
+        -o, --work-icon <value>     Sets custom work icon/text. default: {}
+        -b, --break-icon <value>    Sets custom break icon/text. default: {}
+
         --no-icons                  Disable the pause/play icon
+
     operations:
         toggle                      Toggles the timer
         start                       Start the timer
@@ -366,5 +378,7 @@ fn print_help() {
         LONG_BREAK_TIME / MINUTE,
         PLAY_ICON,
         PAUSE_ICON,
+        WORK_ICON,
+        BREAK_ICON,
     );
 }
