@@ -23,6 +23,8 @@ const MAX_ITERATIONS: u8 = 4;
 const WORK_TIME: u16 = 25 * MINUTE;
 const SHORT_BREAK_TIME: u16 = 5 * MINUTE;
 const LONG_BREAK_TIME: u16 = 15 * MINUTE;
+const PLAY_ICON: &str = "▶";
+const PAUSE_ICON: &str = "⏸";
 
 enum CycleType {
     Work,
@@ -167,12 +169,12 @@ fn handle_client(rx: Receiver<String>, socket_path: String, config: Config) {
         let value = format_time(state.elapsed_time, state.get_current_time());
         let value_prefix = if !config.no_icons {
             if state.running {
-                "⏸ "
+                format!("{} ", config.pause_icon)
             } else {
-                "▶ "
+                format!("{} ", config.play_icon)
             }
         } else {
-            ""
+            "".to_owned()
         };
         let tooltip = format!(
             "{} pomodoro{} completed this session",
@@ -327,6 +329,8 @@ fn print_help() {
         -w, --work <value>          Sets how long a work cycle is, in minutes. default: {}
         -s, --shortbreak <value>    Sets how long a short break is, in minutes. default: {}
         -l, --longbreak <value>     Sets how long a long break is, in minutes. default: {}
+        -p, --play <value>          Sets custom play icon. default: {}
+        -a, --pause <value>         Sets custom pause icon. default: {}
         --no-icons                  Disable the pause/play icon
     operations:
         toggle                      Toggles the timer
@@ -335,6 +339,8 @@ fn print_help() {
         reset                       Reset timer to initial state"#,
         WORK_TIME / MINUTE,
         SHORT_BREAK_TIME / MINUTE,
-        LONG_BREAK_TIME / MINUTE
+        LONG_BREAK_TIME / MINUTE,
+        PLAY_ICON,
+        PAUSE_ICON,
     );
 }
