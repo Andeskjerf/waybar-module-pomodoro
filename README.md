@@ -47,6 +47,8 @@ usage: waybar-module-pomodoro [options] [operation]
         -w, --work <value>          Sets how long a work cycle is, in minutes. default: 25
         -s, --shortbreak <value>    Sets how long a short break is, in minutes. default: 5
         -l, --longbreak <value>     Sets how long a long break is, in minutes. default: 15
+        -p, --play <value>          Sets custom play icon/text. default: ▶
+        -a, --pause <value>         Sets custom pause icon/text. default: ⏸
         --no-icons                  Disable the pause/play icon
     operations:
         toggle                      Toggles the timer

@@ -329,8 +329,8 @@ fn print_help() {
         -w, --work <value>          Sets how long a work cycle is, in minutes. default: {}
         -s, --shortbreak <value>    Sets how long a short break is, in minutes. default: {}
         -l, --longbreak <value>     Sets how long a long break is, in minutes. default: {}
-        -p, --play <value>          Sets custom play icon. default: {}
-        -a, --pause <value>         Sets custom pause icon. default: {}
+        -p, --play <value>          Sets custom play icon/text. default: {}
+        -a, --pause <value>         Sets custom pause icon/text. default: {}
         --no-icons                  Disable the pause/play icon
     operations:
         toggle                      Toggles the timer
