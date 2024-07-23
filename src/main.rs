@@ -58,6 +58,7 @@ impl State {
     fn reset(&mut self) {
         self.current_index = 0;
         self.elapsed_time = 0;
+        self.elapsed_millis = 0;
         self.iterations = 0;
         self.running = false;
     }
@@ -134,6 +135,33 @@ fn print_message(value: String, tooltip: &str, class: &str) {
     );
 }
 
+fn get_class(state: &State) -> String {
+    // timer hasn't been started yet
+    if state.elapsed_millis == 0
+        && state.elapsed_time == 0
+        && state.iterations == 0
+        && state.session_completed == 0
+    {
+        "".to_owned()
+    }
+    // timer has been paused
+    else if !state.running {
+        "pause".to_owned()
+    }
+    // currently doing some work
+    else if state.current_index == 0 {
+        "work".to_owned()
+    }
+    // currently a break
+    else if state.current_index != 0 {
+        "break".to_owned()
+    }
+    // this shouldn't happen but we still need to handle it
+    else {
+        panic!("invalid condition occurred while trying to set class!")
+    }
+}
+
 fn handle_client(rx: Receiver<String>, socket_path: String, config: Config) {
     let mut state = State::new(config.work_time, config.short_break, config.long_break);
 
@@ -185,11 +213,7 @@ fn handle_client(rx: Receiver<String>, socket_path: String, config: Config) {
                 ""
             }
         );
-        let class = if state.current_index == 0 {
-            "work"
-        } else {
-            "break"
-        };
+        let class = &get_class(&state);
         state.update_state();
         print_message(
             value_prefix.to_string() + value.clone().as_str(),
