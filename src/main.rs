@@ -44,10 +44,11 @@ struct State {
     iterations: u8,
     session_completed: u8,
     running: bool,
+    socket_nr: i32,
 }
 
 impl State {
-    fn new(work_time: u16, short_break: u16, long_break: u16) -> State {
+    fn new(work_time: u16, short_break: u16, long_break: u16, socker_nr: i32) -> State {
         State {
             current_index: 0,
             elapsed_millis: 0,
@@ -56,6 +57,7 @@ impl State {
             iterations: 0,
             session_completed: 0,
             running: false,
+            socket_nr: socker_nr,
         }
     }
 
@@ -100,6 +102,16 @@ impl State {
             // if the user has passed either auto flag, we want to keep ticking the timer
             // NOTE: the is_break() seems to be flipped..?
             self.running = (config.autob && self.is_break()) || (config.autow && !self.is_break());
+
+            // only send a notification for the first instance of the module
+            if self.socket_nr == 0 {
+                send_notification(match self.current_index {
+                    0 => CycleType::Work,
+                    1 => CycleType::ShortBreak,
+                    2 => CycleType::LongBreak,
+                    _ => panic!("Invalid cycle type"),
+                });
+            }
         }
     }
 
@@ -171,15 +183,17 @@ fn get_class(state: &State) -> String {
 }
 
 fn handle_client(rx: Receiver<String>, socket_path: String, config: Config) {
-    let mut state = State::new(config.work_time, config.short_break, config.long_break);
-
-    // set initial value to true to ensure it doesn't send a notification when the program starts
-    let mut notification_fired = true;
-
     let socket_nr = socket_path
         .chars()
         .filter_map(|c| c.to_digit(10))
-        .collect::<Vec<u32>>();
+        .fold(0, |acc, digit| acc * 10 + digit) as i32;
+
+    let mut state = State::new(
+        config.work_time,
+        config.short_break,
+        config.long_break,
+        socket_nr,
+    );
 
     loop {
         if let Ok(message) = rx.try_recv() {
@@ -235,19 +249,7 @@ fn handle_client(rx: Receiver<String>, socket_path: String, config: Config) {
         );
 
         if state.running {
-            notification_fired = false;
             state.increment_time();
-        }
-        // we only want to fire a notification if the socket connected to this program is the first one created
-        // we don't want to fire a notification for every instance of the timer, like when the user has multiple monitors
-        else if !state.running && socket_nr[0] == 0 && !notification_fired {
-            send_notification(match state.current_index {
-                0 => CycleType::Work,
-                1 => CycleType::ShortBreak,
-                2 => CycleType::LongBreak,
-                _ => panic!("Invalid cycle type"),
-            });
-            notification_fired = true;
         }
 
         std::thread::sleep(SLEEP_DURATION);
