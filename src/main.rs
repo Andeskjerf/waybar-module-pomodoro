@@ -71,7 +71,7 @@ impl State {
         self.current_index != 0
     }
 
-    fn update_state(&mut self) {
+    fn update_state(&mut self, config: &Config) {
         if (self.times[self.current_index] - self.elapsed_time) == 0 {
             // if we're on the third iteration and first work, then we want a long break
             if self.current_index == 0 && self.iterations == MAX_ITERATIONS - 1 {
@@ -96,8 +96,10 @@ impl State {
             }
 
             self.elapsed_time = 0;
-            // stop the timer and wait for user to start next cycle
-            self.running = false;
+
+            // if the user has passed either auto flag, we want to keep ticking the timer
+            // NOTE: the is_break() seems to be flipped..?
+            self.running = (config.autob && self.is_break()) || (config.autow && !self.is_break());
         }
     }
 
@@ -225,7 +227,7 @@ fn handle_client(rx: Receiver<String>, socket_path: String, config: Config) {
         } else {
             &config.break_icon
         };
-        state.update_state();
+        state.update_state(&config);
         print_message(
             format!("{} {} {}", value_prefix, value, cycle_icon),
             tooltip.as_str(),
@@ -371,6 +373,9 @@ fn print_help() {
         -b, --break-icon <value>    Sets custom break icon/text. default: {}
 
         --no-icons                  Disable the pause/play icon
+
+        --autow                     Starts a work cycle automatically after a break
+        --autob                     Starts a break cycle automatically after work
 
     operations:
         toggle                      Toggles the timer

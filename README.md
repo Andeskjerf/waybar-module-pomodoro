@@ -53,6 +53,9 @@ usage: waybar-module-pomodoro [options] [operation]
 
         --no-icons                  Disable the pause/play icon
 
+        --autow                     Starts a work cycle automatically after a break
+        --autob                     Starts a break cycle automatically after work
+
     operations:
         toggle                      Toggles the timer
         start                       Start the timer

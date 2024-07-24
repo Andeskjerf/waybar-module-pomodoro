@@ -12,6 +12,8 @@ pub struct Config {
     pub pause_icon: String,
     pub work_icon: String,
     pub break_icon: String,
+    pub autow: bool,
+    pub autob: bool,
     pub binary_name: String,
 }
 
@@ -27,6 +29,8 @@ impl Config {
         let mut pause_icon = PAUSE_ICON.to_string();
         let mut work_icon = WORK_ICON.to_string();
         let mut break_icon = BREAK_ICON.to_string();
+        let mut autow = false;
+        let mut autob = false;
 
         let binary_path = options.first().unwrap();
         let binary_name = binary_path.split('/').last().unwrap().to_string();
@@ -58,6 +62,8 @@ impl Config {
             "-b" | "--break-icon" => {
                 break_icon = get_config_value(&options, vec!["-b", "--break-icon"])
             }
+            "--autow" => autow = true,
+            "--autob" => autob = true,
             "--no-icons" => no_icons = true,
             _ => (),
         });
@@ -71,6 +77,8 @@ impl Config {
             pause_icon,
             work_icon,
             break_icon,
+            autow,
+            autob,
             binary_name,
         }
     }
