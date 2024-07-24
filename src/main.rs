@@ -67,6 +67,10 @@ impl State {
         self.running = false;
     }
 
+    fn is_break(&self) -> bool {
+        self.current_index != 0
+    }
+
     fn update_state(&mut self) {
         if (self.times[self.current_index] - self.elapsed_time) == 0 {
             // if we're on the third iteration and first work, then we want a long break
@@ -153,11 +157,11 @@ fn get_class(state: &State) -> String {
         "pause".to_owned()
     }
     // currently doing some work
-    else if state.current_index == 0 {
+    else if !state.is_break() {
         "work".to_owned()
     }
     // currently a break
-    else if state.current_index != 0 {
+    else if state.is_break() {
         "break".to_owned()
     } else {
         panic!("invalid condition occurred while setting class!");
@@ -216,7 +220,7 @@ fn handle_client(rx: Receiver<String>, socket_path: String, config: Config) {
             }
         );
         let class = &get_class(&state);
-        let cycle_icon = if state.iterations == 0 {
+        let cycle_icon = if !state.is_break() {
             &config.work_icon
         } else {
             &config.break_icon
