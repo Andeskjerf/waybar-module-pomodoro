@@ -315,6 +315,13 @@ fn send_message_socket(socket_path: &str, msg: &str) -> Result<(), Error> {
 // we need to handle signals to ensure a graceful exit
 // this is important because we need to remove the sockets on exit
 fn process_signals(socket_path: String) {
+    // all possible realtime UNIX signals
+    let sigrt = 34..64;
+
+    // intentionally ignore realtime signals
+    // if we don't do this, the process will terminate if the user sends SIGRTMIN+N to the bar
+    let mut _dont_handle = Signals::new(sigrt.collect::<Vec<i32>>()).unwrap();
+
     let mut signals = Signals::new([SIGINT, SIGTERM]).unwrap();
     thread::spawn(move || {
         for _ in signals.forever() {
