@@ -320,7 +320,7 @@ fn process_signals(socket_path: String) {
 
     // intentionally ignore realtime signals
     // if we don't do this, the process will terminate if the user sends SIGRTMIN+N to the bar
-    let mut _dont_handle = Signals::new(sigrt.collect::<Vec<i32>>()).unwrap();
+    let _dont_handle = Signals::new(sigrt.collect::<Vec<i32>>()).unwrap();
 
     let mut signals = Signals::new([SIGINT, SIGTERM]).unwrap();
     thread::spawn(move || {
