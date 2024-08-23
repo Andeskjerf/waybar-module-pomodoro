@@ -362,7 +362,10 @@ fn main() -> std::io::Result<()> {
     }
 
     for socket in sockets {
-        send_message_socket(&socket, &operation[0])?;
+        match send_message_socket(&socket, &operation[0]) {
+            Ok(_) => {}
+            Err(_) => println!("warn: failed to connect to {}", socket),
+        };
     }
     Ok(())
 }
