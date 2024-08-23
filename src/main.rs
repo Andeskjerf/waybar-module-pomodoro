@@ -1,7 +1,7 @@
 use config::Config;
 use notify_rust::Notification;
 use signal_hook::{
-    consts::{SIGINT, SIGTERM},
+    consts::{SIGHUP, SIGINT, SIGTERM},
     iterator::Signals,
 };
 use std::{
@@ -322,7 +322,7 @@ fn process_signals(socket_path: String) {
     // if we don't do this, the process will terminate if the user sends SIGRTMIN+N to the bar
     let _dont_handle = Signals::new(sigrt.collect::<Vec<i32>>()).unwrap();
 
-    let mut signals = Signals::new([SIGINT, SIGTERM]).unwrap();
+    let mut signals = Signals::new([SIGINT, SIGTERM, SIGHUP]).unwrap();
     thread::spawn(move || {
         for _ in signals.forever() {
             send_message_socket(&socket_path, "exit").expect("unable to send message to server");
