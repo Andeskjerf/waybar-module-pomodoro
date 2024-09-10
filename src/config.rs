@@ -1,5 +1,5 @@
 use crate::{
-    BREAK_ICON, LONG_BREAK_TIME, MINUTE, PAUSE_ICON, PLAY_ICON, SHORT_BREAK_TIME, WORK_ICON,
+    State, BREAK_ICON, LONG_BREAK_TIME, MINUTE, PAUSE_ICON, PLAY_ICON, SHORT_BREAK_TIME, WORK_ICON,
     WORK_TIME,
 };
 
@@ -84,6 +84,30 @@ impl Config {
             autow,
             autob,
             binary_name,
+        }
+    }
+
+    pub fn get_play_pause_icon(&self, is_break: bool) -> &str {
+        if self.no_icons {
+            return "";
+        }
+
+        if !is_break {
+            &self.play_icon
+        } else {
+            &self.pause_icon
+        }
+    }
+
+    pub fn get_cycle_icon(&self, is_break: bool) -> &str {
+        if self.no_work_icons {
+            return "";
+        }
+
+        if !is_break {
+            &self.work_icon
+        } else {
+            &self.break_icon
         }
     }
 }

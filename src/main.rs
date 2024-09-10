@@ -180,18 +180,6 @@ fn get_class(state: &State) -> String {
     }
 }
 
-fn get_cycle_icon<'a>(state: &State, config: &'a Config) -> &'a str {
-    if config.no_work_icons {
-        return "";
-    }
-
-    if !state.is_break() {
-        &config.work_icon
-    } else {
-        &config.break_icon
-    }
-}
-
 fn handle_client(rx: Receiver<String>, socket_path: String, config: Config) {
     let socket_nr = socket_path
         .chars()
@@ -227,15 +215,7 @@ fn handle_client(rx: Receiver<String>, socket_path: String, config: Config) {
         }
 
         let value = format_time(state.elapsed_time, state.get_current_time());
-        let value_prefix = if !config.no_icons {
-            if state.running {
-                &config.pause_icon
-            } else {
-                &config.play_icon
-            }
-        } else {
-            ""
-        };
+        let value_prefix = config.get_play_pause_icon(state.is_break());
         let tooltip = format!(
             "{} pomodoro{} completed this session",
             state.session_completed,
@@ -246,7 +226,7 @@ fn handle_client(rx: Receiver<String>, socket_path: String, config: Config) {
             }
         );
         let class = &get_class(&state);
-        let cycle_icon = get_cycle_icon(&state, &config);
+        let cycle_icon = config.get_cycle_icon(state.is_break());
         state.update_state(&config);
         print_message(
             format!("{} {} {}", value_prefix, value, cycle_icon),
