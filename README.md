@@ -52,6 +52,7 @@ usage: waybar-module-pomodoro [options] [operation]
         -b, --break-icon <value>    Sets custom break icon/text. default: 
 
         --no-icons                  Disable the pause/play icon
+        --no-work-icons             Disable the work/break icon
 
         --autow                     Starts a work cycle automatically after a break
         --autob                     Starts a break cycle automatically after work
