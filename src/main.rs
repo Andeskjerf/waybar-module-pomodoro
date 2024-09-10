@@ -15,6 +15,7 @@ use std::{
 };
 
 mod config;
+mod utils;
 
 const SLEEP_TIME: u16 = 100;
 const SLEEP_DURATION: Duration = Duration::from_millis(SLEEP_TIME as u64);
@@ -229,7 +230,7 @@ fn handle_client(rx: Receiver<String>, socket_path: String, config: Config) {
         let cycle_icon = config.get_cycle_icon(state.is_break());
         state.update_state(&config);
         print_message(
-            format!("{} {} {}", value_prefix, value, cycle_icon),
+            utils::trim_whitespace(&format!("{} {} {}", value_prefix, value, cycle_icon)),
             tooltip.as_str(),
             class,
         );
