@@ -8,6 +8,7 @@ pub struct Config {
     pub short_break: u16,
     pub long_break: u16,
     pub no_icons: bool,
+    pub no_work_icons: bool,
     pub play_icon: String,
     pub pause_icon: String,
     pub work_icon: String,
@@ -25,6 +26,7 @@ impl Config {
         let mut short_break: u16 = SHORT_BREAK_TIME;
         let mut long_break: u16 = LONG_BREAK_TIME;
         let mut no_icons = false;
+        let mut no_work_icons = false;
         let mut play_icon = PLAY_ICON.to_string();
         let mut pause_icon = PAUSE_ICON.to_string();
         let mut work_icon = WORK_ICON.to_string();
@@ -65,6 +67,7 @@ impl Config {
             "--autow" => autow = true,
             "--autob" => autob = true,
             "--no-icons" => no_icons = true,
+            "--no-work-icons" => no_work_icons = true,
             _ => (),
         });
 
@@ -73,6 +76,7 @@ impl Config {
             short_break,
             long_break,
             no_icons,
+            no_work_icons,
             play_icon,
             pause_icon,
             work_icon,
@@ -80,6 +84,30 @@ impl Config {
             autow,
             autob,
             binary_name,
+        }
+    }
+
+    pub fn get_play_pause_icon(&self, running: bool) -> &str {
+        if self.no_icons {
+            return "";
+        }
+
+        if !running {
+            &self.play_icon
+        } else {
+            &self.pause_icon
+        }
+    }
+
+    pub fn get_cycle_icon(&self, is_break: bool) -> &str {
+        if self.no_work_icons {
+            return "";
+        }
+
+        if !is_break {
+            &self.work_icon
+        } else {
+            &self.break_icon
         }
     }
 }

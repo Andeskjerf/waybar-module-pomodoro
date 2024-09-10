@@ -15,6 +15,7 @@ use std::{
 };
 
 mod config;
+mod utils;
 
 const SLEEP_TIME: u16 = 100;
 const SLEEP_DURATION: Duration = Duration::from_millis(SLEEP_TIME as u64);
@@ -23,8 +24,6 @@ const MAX_ITERATIONS: u8 = 4;
 const WORK_TIME: u16 = 25 * MINUTE;
 const SHORT_BREAK_TIME: u16 = 5 * MINUTE;
 const LONG_BREAK_TIME: u16 = 15 * MINUTE;
-// const PLAY_ICON: &str = "";
-// const PAUSE_ICON: &str = "";
 const PLAY_ICON: &str = "▶";
 const PAUSE_ICON: &str = "⏸";
 const WORK_ICON: &str = "󰔟";
@@ -217,15 +216,7 @@ fn handle_client(rx: Receiver<String>, socket_path: String, config: Config) {
         }
 
         let value = format_time(state.elapsed_time, state.get_current_time());
-        let value_prefix = if !config.no_icons {
-            if state.running {
-                &config.pause_icon
-            } else {
-                &config.play_icon
-            }
-        } else {
-            ""
-        };
+        let value_prefix = config.get_play_pause_icon(state.running);
         let tooltip = format!(
             "{} pomodoro{} completed this session",
             state.session_completed,
@@ -236,14 +227,10 @@ fn handle_client(rx: Receiver<String>, socket_path: String, config: Config) {
             }
         );
         let class = &get_class(&state);
-        let cycle_icon = if !state.is_break() {
-            &config.work_icon
-        } else {
-            &config.break_icon
-        };
+        let cycle_icon = config.get_cycle_icon(state.is_break());
         state.update_state(&config);
         print_message(
-            format!("{} {} {}", value_prefix, value, cycle_icon),
+            utils::trim_whitespace(&format!("{} {} {}", value_prefix, value, cycle_icon)),
             tooltip.as_str(),
             class,
         );
@@ -385,6 +372,7 @@ fn print_help() {
         -b, --break-icon <value>    Sets custom break icon/text. default: {}
 
         --no-icons                  Disable the pause/play icon
+        --no-work-icons             Disable the work/break icon
 
         --autow                     Starts a work cycle automatically after a break
         --autob                     Starts a break cycle automatically after work
