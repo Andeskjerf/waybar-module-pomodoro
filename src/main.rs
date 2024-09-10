@@ -215,7 +215,7 @@ fn handle_client(rx: Receiver<String>, socket_path: String, config: Config) {
         }
 
         let value = format_time(state.elapsed_time, state.get_current_time());
-        let value_prefix = config.get_play_pause_icon(state.is_break());
+        let value_prefix = config.get_play_pause_icon(state.running);
         let tooltip = format!(
             "{} pomodoro{} completed this session",
             state.session_completed,

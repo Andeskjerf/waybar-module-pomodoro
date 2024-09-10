@@ -87,12 +87,12 @@ impl Config {
         }
     }
 
-    pub fn get_play_pause_icon(&self, is_break: bool) -> &str {
+    pub fn get_play_pause_icon(&self, running: bool) -> &str {
         if self.no_icons {
             return "";
         }
 
-        if !is_break {
+        if !running {
             &self.play_icon
         } else {
             &self.pause_icon
