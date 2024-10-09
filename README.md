@@ -16,9 +16,11 @@ cd waybar-module-pomodoro
 cargo build --release
 ```
 
-You can find the binary in `workingDir/target/release/waybar-module-pomodoro`.
-
 Place the file in a folder you have in your $PATH. E.g `/home/user/.local/bin`
+
+```bash
+cp target/release/waybar-module-pomodoro ~/.local/bin
+```
 
 - add to `~/.config/waybar/config`
 
