@@ -17,7 +17,6 @@ use std::{
 mod config;
 mod utils;
 
-const VERSION: &str = "v1.0.0";
 const SLEEP_TIME: u16 = 100;
 const SLEEP_DURATION: Duration = Duration::from_millis(SLEEP_TIME as u64);
 const MINUTE: u16 = 60;
@@ -329,7 +328,8 @@ fn main() -> std::io::Result<()> {
     }
 
     if options.contains(&"--version".to_string()) || options.contains(&"-v".to_string()) {
-        print_version();
+        let version: &str = env!("CARGO_PKG_VERSION");
+        println!("Ver: {}", version);
         return Ok(());
     }
 
@@ -397,9 +397,4 @@ fn print_help() {
         WORK_ICON,
         BREAK_ICON,
     );
-}
-
-fn print_version() {
-    let version = VERSION.to_string();
-    println!("Ver: {}", version);
 }
