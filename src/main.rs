@@ -380,7 +380,7 @@ fn print_help() {
     operations:
         toggle                      Toggles the timer
         start                       Start the timer
-        pause                       Pause the timer
+        stop                        Stop/Pause the timer
         reset                       Reset timer to initial state"#,
         WORK_TIME / MINUTE,
         SHORT_BREAK_TIME / MINUTE,
