@@ -17,6 +17,7 @@ use std::{
 mod config;
 mod utils;
 
+const VERSION: &str = "v1.0.0";
 const SLEEP_TIME: u16 = 100;
 const SLEEP_DURATION: Duration = Duration::from_millis(SLEEP_TIME as u64);
 const MINUTE: u16 = 60;
@@ -327,6 +328,11 @@ fn main() -> std::io::Result<()> {
         return Ok(());
     }
 
+    if options.contains(&"--version".to_string()) || options.contains(&"-v".to_string()) {
+        print_version();
+        return Ok(());
+    }
+
     let config = Config::from_options(options);
 
     let mut sockets = get_existing_sockets(&config.binary_name);
@@ -362,6 +368,7 @@ fn print_help() {
         r#"usage: waybar-module-pomodoro [options] [operation]
     options:
         -h, --help                  Prints this help message
+        -v, --version               Prints the version string
         -w, --work <value>          Sets how long a work cycle is, in minutes. default: {}
         -s, --shortbreak <value>    Sets how long a short break is, in minutes. default: {}
         -l, --longbreak <value>     Sets how long a long break is, in minutes. default: {}
@@ -390,4 +397,9 @@ fn print_help() {
         WORK_ICON,
         BREAK_ICON,
     );
+}
+
+fn print_version() {
+    let version = VERSION.to_string();
+    println!("Ver: {}", version);
 }

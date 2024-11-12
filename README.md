@@ -44,6 +44,7 @@ You can check how many pomodoros you've completed this session by hovering the m
 usage: waybar-module-pomodoro [options] [operation]
     options:
         -h, --help                  Prints this help message
+        -v, --version               Prints the version string
         -w, --work <value>          Sets how long a work cycle is, in minutes. default: 25
         -s, --shortbreak <value>    Sets how long a short break is, in minutes. default: 5
         -l, --longbreak <value>     Sets how long a long break is, in minutes. default: 15
