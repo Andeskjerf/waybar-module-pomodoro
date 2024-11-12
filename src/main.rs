@@ -327,6 +327,12 @@ fn main() -> std::io::Result<()> {
         return Ok(());
     }
 
+    if options.contains(&"--version".to_string()) || options.contains(&"-v".to_string()) {
+        let version: &str = env!("CARGO_PKG_VERSION");
+        println!("Ver: {}", version);
+        return Ok(());
+    }
+
     let config = Config::from_options(options);
 
     let mut sockets = get_existing_sockets(&config.binary_name);
@@ -362,6 +368,7 @@ fn print_help() {
         r#"usage: waybar-module-pomodoro [options] [operation]
     options:
         -h, --help                  Prints this help message
+        -v, --version               Prints the version string
         -w, --work <value>          Sets how long a work cycle is, in minutes. default: {}
         -s, --shortbreak <value>    Sets how long a short break is, in minutes. default: {}
         -l, --longbreak <value>     Sets how long a long break is, in minutes. default: {}
@@ -380,7 +387,7 @@ fn print_help() {
     operations:
         toggle                      Toggles the timer
         start                       Start the timer
-        pause                       Pause the timer
+        stop                        Stop the timer
         reset                       Reset timer to initial state"#,
         WORK_TIME / MINUTE,
         SHORT_BREAK_TIME / MINUTE,
