@@ -63,7 +63,7 @@ usage: waybar-module-pomodoro [options] [operation]
     operations:
         toggle                      Toggles the timer
         start                       Start the timer
-        stop                        Stop/Pause the timer
+        stop                        Stop the timer
         reset                       Reset timer to initial state
 ```
 
