@@ -25,12 +25,9 @@ pub(crate) fn restore(state: &mut State, config: &Config) -> io::Result<()> {
     let output_name = format!("{}-{}", MODULE, VERSION);
     filepath.push(output_name);
 
-    let file = File::open(filepath)
-        .expect("Cache file should open");
-    let json: serde_json::Value = serde_json::from_reader(file)
-        .expect("Cache file should be proper JSON");
-
-    let restored: State = serde_json::from_value(json).unwrap();
+    let file = File::open(filepath)?;
+    let json: serde_json::Value = serde_json::from_reader(file)?;
+    let restored: State = serde_json::from_value(json)?;
 
     if match_timers(&config, &restored.times) {
         state.current_index = restored.current_index;
