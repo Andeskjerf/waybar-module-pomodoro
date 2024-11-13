@@ -59,6 +59,7 @@ usage: waybar-module-pomodoro [options] [operation]
 
         --autow                     Starts a work cycle automatically after a break
         --autob                     Starts a break cycle automatically after work
+        --autor                     Restore timer to prior-state (even after shutdown)
 
     operations:
         toggle                      Toggles the timer

@@ -4,6 +4,7 @@ use signal_hook::{
     consts::{SIGHUP, SIGINT, SIGTERM},
     iterator::Signals,
 };
+use serde::{Serialize, Deserialize};
 use std::{
     env, fs,
     io::{Error, Read, Write},
@@ -16,6 +17,7 @@ use std::{
 
 mod config;
 mod utils;
+mod cache;
 
 const SLEEP_TIME: u16 = 100;
 const SLEEP_DURATION: Duration = Duration::from_millis(SLEEP_TIME as u64);
@@ -35,6 +37,7 @@ enum CycleType {
     LongBreak,
 }
 
+#[derive(Serialize, Deserialize)]
 struct State {
     current_index: usize,
     elapsed_millis: u16,
@@ -194,6 +197,10 @@ fn handle_client(rx: Receiver<String>, socket_path: String, config: Config) {
         socket_nr,
     );
 
+    if config.autor {
+        let _ = cache::restore(&mut state, &config);
+    }
+
     loop {
         if let Ok(message) = rx.try_recv() {
             match message.as_str() {
@@ -237,6 +244,10 @@ fn handle_client(rx: Receiver<String>, socket_path: String, config: Config) {
 
         if state.running {
             state.increment_time();
+        }
+
+        if config.autor {
+            let _ = cache::store(&state);
         }
 
         std::thread::sleep(SLEEP_DURATION);
@@ -383,6 +394,7 @@ fn print_help() {
 
         --autow                     Starts a work cycle automatically after a break
         --autob                     Starts a break cycle automatically after work
+        --autor                     Restore timer to prior-state (even after shutdown)
 
     operations:
         toggle                      Toggles the timer
