@@ -68,7 +68,7 @@ impl Config {
             }
             "--autow" => autow = true,
             "--autob" => autob = true,
-            "--persist" => autor = true,
+            "--persist" => persist = true,
             "--no-icons" => no_icons = true,
             "--no-work-icons" => no_work_icons = true,
             _ => (),
