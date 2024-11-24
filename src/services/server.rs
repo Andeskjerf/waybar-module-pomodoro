@@ -199,10 +199,17 @@ pub fn send_message_socket(socket_path: &str, msg: &str) -> Result<(), Error> {
 
 #[cfg(test)]
 mod tests {
+    use crate::LONG_BREAK_TIME;
+    use crate::SHORT_BREAK_TIME;
     use fs::File;
+    use utils::consts::WORK_TIME;
 
     use super::*;
     use crate::services::server::CycleType;
+
+    fn create_timer() -> Timer {
+        Timer::new(WORK_TIME, SHORT_BREAK_TIME, LONG_BREAK_TIME, 0)
+    }
 
     #[test]
     fn test_send_notification_work() {
@@ -242,35 +249,35 @@ mod tests {
 
     #[test]
     fn test_process_message_set_work() {
-        let mut state = Timer::default();
+        let mut state = create_timer();
         process_message(&mut state, &Message::new("set-work", 30).encode());
         assert_eq!(state.get_time(CycleType::Work), 30 * MINUTE);
     }
 
     #[test]
     fn test_process_message_set_short() {
-        let mut state = Timer::default();
+        let mut state = create_timer();
         process_message(&mut state, &Message::new("set-short", 3).encode());
         assert_eq!(state.get_time(CycleType::ShortBreak), 3 * MINUTE);
     }
 
     #[test]
     fn test_process_message_set_long() {
-        let mut state = Timer::default();
+        let mut state = create_timer();
         process_message(&mut state, &Message::new("set-long", 10).encode());
         assert_eq!(state.get_time(CycleType::LongBreak), 10 * MINUTE);
     }
 
     #[test]
     fn test_process_message_start() {
-        let mut state = Timer::default();
+        let mut state = create_timer();
         process_message(&mut state, "start");
         assert!(state.running);
     }
 
     #[test]
     fn test_process_message_stop() {
-        let mut state = Timer::default();
+        let mut state = create_timer();
         process_message(&mut state, "stop");
         assert!(!state.running);
     }
