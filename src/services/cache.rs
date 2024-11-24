@@ -23,7 +23,10 @@ pub fn restore(state: &mut Timer, config: &Config) -> Result<(), Box<dyn Error>>
 
     let file = File::open(filepath)?;
     let json: serde_json::Value = serde_json::from_reader(file)?;
-    let restored: Timer = serde_json::from_value(json)?;
+    let restored: Timer = match serde_json::from_value(json.clone()) {
+        Ok(value) => value,
+        Err(e) => return Err(format!("cache::restore err: json == {json}, err == {e}").into()),
+    };
 
     if match_timers(config, &restored.times) {
         state.current_index = restored.current_index;
