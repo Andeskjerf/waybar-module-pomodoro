@@ -59,6 +59,7 @@ usage: waybar-module-pomodoro [options] [operation]
 
         --autow                     Starts a work cycle automatically after a break
         --autob                     Starts a break cycle automatically after work
+        --persist                   Persist timer state between sessions
 
     operations:
         toggle                      Toggles the timer
