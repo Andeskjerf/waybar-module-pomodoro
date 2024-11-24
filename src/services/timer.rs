@@ -140,3 +140,150 @@ impl Timer {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::utils::consts::{LONG_BREAK_TIME, SHORT_BREAK_TIME, SLEEP_DURATION, WORK_TIME};
+
+    use super::*;
+
+    fn create_timer() -> Timer {
+        let socket_nr = 1;
+
+        Timer::new(WORK_TIME, SHORT_BREAK_TIME, LONG_BREAK_TIME, socket_nr)
+    }
+
+    #[test]
+    fn test_new_timer() {
+        let timer = create_timer();
+
+        assert_eq!(timer.current_index, 0);
+        assert_eq!(timer.elapsed_millis, 0);
+        assert_eq!(timer.elapsed_time, 0);
+        assert_eq!(timer.times, [WORK_TIME, SHORT_BREAK_TIME, LONG_BREAK_TIME]);
+        assert_eq!(timer.iterations, 0);
+        assert_eq!(timer.session_completed, 0);
+        assert!(!timer.running);
+    }
+
+    #[test]
+    fn test_reset_timer() {
+        let mut timer = create_timer();
+        timer.current_index = 2;
+        timer.elapsed_millis = 999;
+        timer.elapsed_time = WORK_TIME - 1;
+        timer.iterations = 4;
+        timer.session_completed = 3;
+        timer.running = true;
+
+        timer.reset();
+
+        assert_eq!(timer.current_index, 0);
+        assert_eq!(timer.elapsed_millis, 0);
+        assert_eq!(timer.elapsed_time, 0);
+        assert_eq!(timer.iterations, 0);
+        assert!(!timer.running);
+    }
+
+    #[test]
+    fn test_is_break() {
+        let mut timer = create_timer();
+
+        assert!(!timer.is_break());
+
+        timer.current_index = 1;
+        assert!(timer.is_break());
+    }
+
+    #[test]
+    fn test_set_time() {
+        let mut timer = create_timer();
+
+        timer.set_time(CycleType::Work, 30);
+        assert_eq!(timer.times[0], 30 * 60);
+
+        timer.set_time(CycleType::ShortBreak, 10);
+        assert_eq!(timer.times[1], 10 * 60);
+
+        timer.set_time(CycleType::LongBreak, 20);
+        assert_eq!(timer.times[2], 20 * 60);
+    }
+
+    #[test]
+    fn test_get_class() {
+        let mut timer = create_timer();
+
+        assert_eq!(timer.get_class(), "");
+
+        timer.running = true;
+        timer.elapsed_millis = 1;
+        assert_eq!(timer.get_class(), "work");
+
+        timer.current_index = 1;
+        assert_eq!(timer.get_class(), "break");
+
+        timer.running = false;
+        assert_eq!(timer.get_class(), "pause");
+    }
+
+    #[test]
+    fn test_update_state() {
+        let mut timer = create_timer();
+        let config = Config::default();
+
+        // set to low times so the test passes faster
+        let time = 1;
+        timer.times[0] = time;
+        timer.times[1] = time;
+        timer.times[2] = time;
+
+        // Initial state
+        assert_eq!(timer.current_index, 0);
+        assert_eq!(timer.iterations, 0);
+
+        // Update state after work time is completed
+        for _ in 0..time * 1000 / SLEEP_TIME {
+            timer.increment_time();
+            std::thread::sleep(SLEEP_DURATION);
+        }
+        timer.update_state(&config);
+        assert_eq!(timer.current_index, 1); // Move to short break
+
+        // Update state after short break is completed
+        for _ in 0..time * 1000 / SLEEP_TIME {
+            timer.increment_time();
+            std::thread::sleep(SLEEP_DURATION);
+        }
+        timer.update_state(&config);
+
+        // we need to trigger a long break
+        timer.iterations = MAX_ITERATIONS - 1;
+
+        // Update state after short break is completed
+        for _ in 0..time * 1000 / SLEEP_TIME {
+            timer.increment_time();
+            std::thread::sleep(SLEEP_DURATION);
+        }
+
+        timer.update_state(&config);
+        assert_eq!(timer.current_index, 2); // Move to long break
+    }
+
+    #[test]
+    fn test_increment_elapsed_time() {
+        let mut timer = create_timer();
+
+        assert_eq!(timer.elapsed_millis, 0);
+        assert_eq!(timer.elapsed_time, 0);
+
+        timer.increment_time();
+        assert_eq!(timer.elapsed_millis, SLEEP_TIME); // Assuming SLEEP_INTERVAL is defined
+        assert_eq!(timer.elapsed_time, 0);
+
+        for _ in 1..SLEEP_TIME {
+            timer.increment_time();
+        }
+        assert_eq!(timer.elapsed_millis, 0);
+        assert_eq!(timer.elapsed_time, 10);
+    }
+}
