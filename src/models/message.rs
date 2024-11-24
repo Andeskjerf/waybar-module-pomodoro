@@ -2,7 +2,7 @@ use std::error::Error;
 
 use regex::Regex;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Message {
     name: String,
     value: i32,
