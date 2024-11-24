@@ -394,7 +394,7 @@ fn print_help() {
 
         --autow                     Starts a work cycle automatically after a break
         --autob                     Starts a break cycle automatically after work
-        --autor                     Restore timer to prior-state (even after shutdown)
+        --persist                   Persist timer state between sessions
 
     operations:
         toggle                      Toggles the timer
