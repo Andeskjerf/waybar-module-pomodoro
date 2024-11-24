@@ -1,11 +1,16 @@
-use config::{parse_set_operations, Config, OPERATIONS};
-use models::message::Message;
+use models::{
+    config::{parse_set_operations, Config, OPERATIONS},
+    message::Message,
+};
 use notify_rust::Notification;
+use services::{
+    cache,
+    timer::{CycleType, Timer},
+};
 use signal_hook::{
     consts::{SIGHUP, SIGINT, SIGTERM},
     iterator::Signals,
 };
-use serde::{Serialize, Deserialize};
 use std::{
     env, fs,
     io::{Error, Read, Write},
@@ -13,135 +18,15 @@ use std::{
     path::Path,
     sync::mpsc::{Receiver, Sender},
     thread,
-    time::Duration,
+};
+use utils::consts::{
+    BREAK_ICON, LONG_BREAK_TIME, MINUTE, PAUSE_ICON, PLAY_ICON, SHORT_BREAK_TIME, SLEEP_DURATION,
+    WORK_ICON, WORK_TIME,
 };
 
-mod config;
 mod models;
+mod services;
 mod utils;
-mod cache;
-
-const SLEEP_TIME: u16 = 100;
-const SLEEP_DURATION: Duration = Duration::from_millis(SLEEP_TIME as u64);
-const MINUTE: u16 = 60;
-const MAX_ITERATIONS: u8 = 4;
-const WORK_TIME: u16 = 25 * MINUTE;
-const SHORT_BREAK_TIME: u16 = 5 * MINUTE;
-const LONG_BREAK_TIME: u16 = 15 * MINUTE;
-const PLAY_ICON: &str = "▶";
-const PAUSE_ICON: &str = "⏸";
-const WORK_ICON: &str = "󰔟";
-const BREAK_ICON: &str = "";
-
-#[derive(Debug)]
-enum CycleType {
-    Work,
-    ShortBreak,
-    LongBreak,
-}
-
-#[derive(Serialize, Deserialize)]
-struct State {
-    current_index: usize,
-    elapsed_millis: u16,
-    elapsed_time: u16,
-    times: [u16; 3],
-    iterations: u8,
-    session_completed: u8,
-    running: bool,
-    socket_nr: i32,
-}
-
-impl State {
-    fn new(work_time: u16, short_break: u16, long_break: u16, socker_nr: i32) -> State {
-        State {
-            current_index: 0,
-            elapsed_millis: 0,
-            elapsed_time: 0,
-            times: [work_time, short_break, long_break],
-            iterations: 0,
-            session_completed: 0,
-            running: false,
-            socket_nr: socker_nr,
-        }
-    }
-
-    fn reset(&mut self) {
-        self.current_index = 0;
-        self.elapsed_time = 0;
-        self.elapsed_millis = 0;
-        self.iterations = 0;
-        self.running = false;
-    }
-
-    fn is_break(&self) -> bool {
-        self.current_index != 0
-    }
-
-    fn set_time(&mut self, cycle: CycleType, input: u16) {
-        self.reset();
-
-        match cycle {
-            CycleType::Work => self.times[0] = input * 60,
-            CycleType::ShortBreak => self.times[1] = input * 60,
-            CycleType::LongBreak => self.times[2] = input * 60,
-        }
-    }
-
-    fn update_state(&mut self, config: &Config) {
-        if (self.times[self.current_index] - self.elapsed_time) == 0 {
-            // if we're on the third iteration and first work, then we want a long break
-            if self.current_index == 0 && self.iterations == MAX_ITERATIONS - 1 {
-                self.current_index = self.times.len() - 1;
-                self.iterations = MAX_ITERATIONS;
-            }
-            // if we've had our long break, reset everything and start over
-            else if self.current_index == self.times.len() - 1
-                && self.iterations == MAX_ITERATIONS
-            {
-                self.current_index = 0;
-                self.iterations = 0;
-                // since we've gone through a long break, we've also completed a single pomodoro!
-                self.session_completed += 1;
-            }
-            // otherwise, run as normal
-            else {
-                self.current_index = (self.current_index + 1) % 2;
-                if self.current_index == 0 {
-                    self.iterations += 1;
-                }
-            }
-
-            self.elapsed_time = 0;
-
-            // if the user has passed either auto flag, we want to keep ticking the timer
-            // NOTE: the is_break() seems to be flipped..?
-            self.running = (config.autob && self.is_break()) || (config.autow && !self.is_break());
-
-            // only send a notification for the first instance of the module
-            if self.socket_nr == 0 {
-                send_notification(match self.current_index {
-                    0 => CycleType::Work,
-                    1 => CycleType::ShortBreak,
-                    2 => CycleType::LongBreak,
-                    _ => panic!("Invalid cycle type"),
-                });
-            }
-        }
-    }
-
-    fn get_current_time(&self) -> u16 {
-        self.times[self.current_index]
-    }
-
-    fn increment_time(&mut self) {
-        self.elapsed_millis += SLEEP_TIME;
-        if self.elapsed_millis >= 1000 {
-            self.elapsed_millis = 0;
-            self.elapsed_time += 1;
-        }
-    }
-}
 
 fn send_notification(cycle_type: CycleType) {
     match Notification::new()
@@ -172,7 +57,7 @@ fn print_message(value: String, tooltip: &str, class: &str) {
     );
 }
 
-fn get_class(state: &State) -> String {
+fn get_class(state: &Timer) -> String {
     // timer hasn't been started yet
     if state.elapsed_millis == 0
         && state.elapsed_time == 0
@@ -197,7 +82,7 @@ fn get_class(state: &State) -> String {
     }
 }
 
-fn process_message(state: &mut State, message: &str) {
+fn process_message(state: &mut Timer, message: &str) {
     if let Ok(msg) = Message::decode(message) {
         match msg.name() {
             "set-work" => state.set_time(CycleType::Work, msg.value() as u16),
@@ -232,7 +117,7 @@ fn handle_client(rx: Receiver<String>, socket_path: String, config: Config) {
         .filter_map(|c| c.to_digit(10))
         .fold(0, |acc, digit| acc * 10 + digit) as i32;
 
-    let mut state = State::new(
+    let mut state = Timer::new(
         config.work_time,
         config.short_break,
         config.long_break,
@@ -263,7 +148,7 @@ fn handle_client(rx: Receiver<String>, socket_path: String, config: Config) {
         let cycle_icon = config.get_cycle_icon(state.is_break());
         state.update_state(&config);
         print_message(
-            utils::trim_whitespace(&format!("{} {} {}", value_prefix, value, cycle_icon)),
+            utils::helper::trim_whitespace(&format!("{} {} {}", value_prefix, value, cycle_icon)),
             tooltip.as_str(),
             class,
         );
