@@ -320,6 +320,7 @@ fn process_signals(socket_path: String) {
 fn main() -> std::io::Result<()> {
     // valid operations
     let operations = ["toggle", "start", "stop", "reset"];
+    let set_operations = ["set-work", "set-short", "set-long"];
 
     let options = env::args().collect::<Vec<String>>();
     if options.contains(&"--help".to_string()) || options.contains(&"-h".to_string()) {
@@ -388,7 +389,11 @@ fn print_help() {
         toggle                      Toggles the timer
         start                       Start the timer
         stop                        Stop the timer
-        reset                       Reset timer to initial state"#,
+        reset                       Reset timer to initial state
+
+        set-work <value>            Set new work time
+        set-short <value>           Set new short break time
+        set-long <value>            Set new long break time"#,
         WORK_TIME / MINUTE,
         SHORT_BREAK_TIME / MINUTE,
         LONG_BREAK_TIME / MINUTE,
