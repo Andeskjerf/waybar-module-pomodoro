@@ -197,7 +197,7 @@ fn handle_client(rx: Receiver<String>, socket_path: String, config: Config) {
         socket_nr,
     );
 
-    if config.autor {
+    if config.persist {
         let _ = cache::restore(&mut state, &config);
     }
 
@@ -246,7 +246,7 @@ fn handle_client(rx: Receiver<String>, socket_path: String, config: Config) {
             state.increment_time();
         }
 
-        if config.autor {
+        if config.persist {
             let _ = cache::store(&state);
         }
 
