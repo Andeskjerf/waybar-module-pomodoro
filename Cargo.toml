@@ -1,6 +1,6 @@
 [package]
 name = "waybar-module-pomodoro"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -8,3 +8,5 @@ edition = "2021"
 [dependencies]
 notify-rust = "4.11.0"
 signal-hook = "0.3.17"
+serde = { version = "1.0.104", features = ["derive"] }
+serde_json = "1.0.48"

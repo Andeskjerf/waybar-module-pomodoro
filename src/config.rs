@@ -15,6 +15,7 @@ pub struct Config {
     pub break_icon: String,
     pub autow: bool,
     pub autob: bool,
+    pub persist: bool,
     pub binary_name: String,
 }
 
@@ -33,6 +34,7 @@ impl Config {
         let mut break_icon = BREAK_ICON.to_string();
         let mut autow = false;
         let mut autob = false;
+        let mut persist = false;
 
         let binary_path = options.first().unwrap();
         let binary_name = binary_path.split('/').last().unwrap().to_string();
@@ -66,6 +68,7 @@ impl Config {
             }
             "--autow" => autow = true,
             "--autob" => autob = true,
+            "--persist" => persist = true,
             "--no-icons" => no_icons = true,
             "--no-work-icons" => no_work_icons = true,
             _ => (),
@@ -83,6 +86,7 @@ impl Config {
             break_icon,
             autow,
             autob,
+            persist,
             binary_name,
         }
     }
