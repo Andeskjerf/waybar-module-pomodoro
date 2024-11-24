@@ -68,7 +68,6 @@ fn cache_dir() -> Result<PathBuf, Box<dyn Error>> {
 
 #[cfg(test)]
 mod tests {
-
     use super::*;
 
     // Mock the env variables used in the code
@@ -166,6 +165,9 @@ mod tests {
 
         let mut dir = dirs::cache_dir().expect("unable to get cache dir");
         dir.push(MODULE);
+        if let Err(e) = std::fs::create_dir(&dir) {
+            println!("err: err == {e}");
+        }
 
         let result = cache_dir()?;
 
