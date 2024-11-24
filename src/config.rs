@@ -1,6 +1,6 @@
 use crate::{
-    BREAK_ICON, LONG_BREAK_TIME, MINUTE, PAUSE_ICON, PLAY_ICON, SHORT_BREAK_TIME, WORK_ICON,
-    WORK_TIME,
+    models::message::Message, BREAK_ICON, LONG_BREAK_TIME, MINUTE, PAUSE_ICON, PLAY_ICON,
+    SHORT_BREAK_TIME, WORK_ICON, WORK_TIME,
 };
 
 pub const OPERATIONS: [&str; 4] = ["toggle", "start", "stop", "reset"];
@@ -41,7 +41,6 @@ impl Config {
         for opt in options.iter() {
             let val = get_config_value(&options, vec![opt]);
             if val.is_none() {
-                println!("warn: unable to parse `{opt}`! no value found");
                 continue;
             }
 
@@ -116,8 +115,8 @@ pub fn get_config_value<'a>(options: &'a [String], keys: Vec<&'a str>) -> Option
     }
 }
 
-pub fn parse_set_operations(args: Vec<String>) -> Vec<(String, u32)> {
-    let mut set_operation: Vec<(String, u32)> = vec![];
+pub fn parse_set_operations(args: Vec<String>) -> Vec<Message> {
+    let mut set_operation: Vec<Message> = vec![];
     for elem in SET_OPERATIONS {
         if !args.contains(&elem.to_string()) {
             continue;
@@ -125,14 +124,13 @@ pub fn parse_set_operations(args: Vec<String>) -> Vec<(String, u32)> {
 
         let val = get_config_value(&args, vec![elem]);
         if val.is_none() {
-            println!("warn: unable to parse `{elem}`! no value found");
             continue;
         }
 
         let val = val.unwrap();
         if let Ok(val) = val.parse::<i32>() {
             if val > 0 {
-                set_operation.push((elem.to_string(), val as u32));
+                set_operation.push(Message::new(elem, val));
             } else {
                 println!("{elem}: value must be higher than 0, ignoring");
             }
