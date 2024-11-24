@@ -44,6 +44,7 @@ You can check how many pomodoros you've completed this session by hovering the m
 usage: waybar-module-pomodoro [options] [operation]
     options:
         -h, --help                  Prints this help message
+        -v, --version               Prints the version string
         -w, --work <value>          Sets how long a work cycle is, in minutes. default: 25
         -s, --shortbreak <value>    Sets how long a short break is, in minutes. default: 5
         -l, --longbreak <value>     Sets how long a long break is, in minutes. default: 15
@@ -58,12 +59,17 @@ usage: waybar-module-pomodoro [options] [operation]
 
         --autow                     Starts a work cycle automatically after a break
         --autob                     Starts a break cycle automatically after work
+        --persist                   Persist timer state between sessions
 
     operations:
         toggle                      Toggles the timer
         start                       Start the timer
-        pause                       Pause the timer
+        stop                        Stop the timer
         reset                       Reset timer to initial state
+
+        set-work <value>            Set new work time
+        set-short <value>           Set new short break time
+        set-long <value>            Set new long break time
 ```
 
 ## CSS Styling
