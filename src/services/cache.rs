@@ -1,9 +1,4 @@
-use std::{
-    env,
-    fs::File,
-    io::{self, Write},
-    path::{Path, PathBuf},
-};
+use std::{env, error::Error, fs::File, io::Write, path::PathBuf};
 
 use crate::models::config::Config;
 
@@ -12,16 +7,16 @@ use super::timer::Timer;
 const MODULE: &str = env!("CARGO_PKG_NAME");
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
-pub(crate) fn store(state: &Timer) -> io::Result<()> {
+pub(crate) fn store(state: &Timer) -> Result<(), Box<dyn Error>> {
     let mut filepath = cache_dir()?;
     let output_name = format!("{}-{}", MODULE, VERSION);
     filepath.push(output_name);
 
     let data = serde_json::to_string(&state).expect("Not a serializable type");
-    File::create(filepath)?.write_all(data.as_bytes())
+    Ok(File::create(filepath)?.write_all(data.as_bytes())?)
 }
 
-pub(crate) fn restore(state: &mut Timer, config: &Config) -> io::Result<()> {
+pub(crate) fn restore(state: &mut Timer, config: &Config) -> Result<(), Box<dyn Error>> {
     let mut filepath = cache_dir()?;
     let output_name = format!("{}-{}", MODULE, VERSION);
     filepath.push(output_name);
@@ -57,33 +52,18 @@ fn match_timers(config: &Config, times: &[u16; 3]) -> bool {
     true
 }
 
-fn create_dir(p: &Path) -> io::Result<()> {
-    println!("{:?}", p);
-    if !p.is_dir() {
-        std::fs::create_dir(p)
+fn cache_dir() -> Result<PathBuf, Box<dyn Error>> {
+    let mut dir = if let Some(dir) = dirs::cache_dir() {
+        dir
     } else {
-        Ok(())
-    }
-}
+        return Err("unable to get cache dir".into());
+    };
 
-fn cache_dir() -> io::Result<PathBuf> {
-    if let Ok(path) = env::var("XDG_CACHE_HOME") {
-        let mut path: PathBuf = path.into();
-        path.push(MODULE);
-        create_dir(&path)?;
-        Ok(path)
-    } else if let Ok(path) = env::var("HOME") {
-        let mut path: PathBuf = path.into();
-        path.push(".cache");
-        path.push(MODULE);
-        create_dir(&path)?;
-        Ok(path)
-    } else {
-        Err(io::Error::new(
-            io::ErrorKind::Other,
-            "failed to read both $XDG_CACHE_HOME and $HOME environment variables".to_string(),
-        ))
+    dir.push(MODULE);
+    if !dir.is_dir() {
+        std::fs::create_dir(&dir)?;
     }
+    Ok(dir)
 }
 
 #[cfg(test)]
