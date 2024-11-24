@@ -1,6 +1,6 @@
 on: [push, pull_request]
 
-name: CI/CD
+name: Waybar-Module-Pomodoro
 
 env:
   CARGO_TERM_COLOR: always
