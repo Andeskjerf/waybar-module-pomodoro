@@ -7,4 +7,5 @@ edition = "2021"
 
 [dependencies]
 notify-rust = "4.11.0"
+regex = "1.11.1"
 signal-hook = "0.3.17"
