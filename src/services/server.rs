@@ -44,11 +44,11 @@ fn format_time(elapsed_time: u16, max_time: u16) -> String {
     format!("{:02}:{:02}", minute, second)
 }
 
-fn print_message(value: String, tooltip: &str, class: &str) {
-    println!(
+fn create_message(value: String, tooltip: &str, class: &str) -> String {
+    format!(
         "{{\"text\": \"{}\", \"tooltip\": \"{}\", \"class\": \"{}\", \"alt\": \"{}\"}}",
         value, tooltip, class, class
-    );
+    )
 }
 
 fn process_message(state: &mut Timer, message: &str) {
@@ -116,10 +116,16 @@ fn handle_client(rx: Receiver<String>, socket_path: String, config: Config) {
         let class = state.get_class();
         let cycle_icon = config.get_cycle_icon(state.is_break());
         state.update_state(&config);
-        print_message(
-            utils::helper::trim_whitespace(&format!("{} {} {}", value_prefix, value, cycle_icon)),
-            tooltip.as_str(),
-            &class,
+        println!(
+            "{}",
+            create_message(
+                utils::helper::trim_whitespace(&format!(
+                    "{} {} {}",
+                    value_prefix, value, cycle_icon
+                )),
+                tooltip.as_str(),
+                &class,
+            )
         );
 
         if state.running {
@@ -189,4 +195,123 @@ pub fn send_message_socket(socket_path: &str, msg: &str) -> Result<(), Error> {
     let mut stream = UnixStream::connect(socket_path)?;
     stream.write_all(msg.as_bytes())?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use fs::File;
+
+    use super::*;
+    use crate::services::server::CycleType;
+
+    #[test]
+    fn test_send_notification_work() {
+        send_notification(CycleType::Work);
+    }
+
+    #[test]
+    fn test_send_notification_short_break() {
+        send_notification(CycleType::ShortBreak);
+    }
+
+    #[test]
+    fn test_send_notification_long_break() {
+        send_notification(CycleType::LongBreak);
+    }
+
+    #[test]
+    fn test_format_time() {
+        assert_eq!(format_time(300, 600), "05:00");
+        assert_eq!(format_time(59, 60), "00:01");
+        assert_eq!(format_time(0, 120), "02:00");
+    }
+
+    #[test]
+    fn test_create_message() {
+        let message = "Pomodoro";
+        let tooltip = "Tooltip";
+        let class = "Class";
+
+        let result = create_message(message.to_string(), tooltip, class);
+        let expected = format!(
+            "{{\"text\": \"{}\", \"tooltip\": \"{}\", \"class\": \"{}\", \"alt\": \"{}\"}}",
+            message, tooltip, class, class
+        );
+        assert!(result == expected);
+    }
+
+    #[test]
+    fn test_process_message_set_work() {
+        let mut state = Timer::default();
+        process_message(&mut state, &Message::new("set-work", 30).encode());
+        assert_eq!(state.get_time(CycleType::Work), 30 * MINUTE);
+    }
+
+    #[test]
+    fn test_process_message_set_short() {
+        let mut state = Timer::default();
+        process_message(&mut state, &Message::new("set-short", 3).encode());
+        assert_eq!(state.get_time(CycleType::ShortBreak), 3 * MINUTE);
+    }
+
+    #[test]
+    fn test_process_message_set_long() {
+        let mut state = Timer::default();
+        process_message(&mut state, &Message::new("set-long", 10).encode());
+        assert_eq!(state.get_time(CycleType::LongBreak), 10 * MINUTE);
+    }
+
+    #[test]
+    fn test_process_message_start() {
+        let mut state = Timer::default();
+        process_message(&mut state, "start");
+        assert!(state.running);
+    }
+
+    #[test]
+    fn test_process_message_stop() {
+        let mut state = Timer::default();
+        process_message(&mut state, "stop");
+        assert!(!state.running);
+    }
+
+    // TODO:
+    // #[tokio::test]
+    // async fn test_spawn_server() {
+    // }
+
+    // TODO:
+    // #[tokio::test]
+    // async fn test_handle_client() {
+    // }
+
+    // TODO:
+    // #[tokio::test]
+    // async fn test_send_message_socket() {
+    // }
+
+    #[test]
+    fn test_delete_socket() {
+        let socket_path = "/tmp/waybar-module-pomodoro_test_socket";
+        std::fs::File::create(socket_path).unwrap();
+        assert!(std::path::Path::new(socket_path).exists());
+
+        delete_socket(socket_path);
+        assert!(!std::path::Path::new(socket_path).exists());
+    }
+
+    #[test]
+    fn test_get_existing_sockets() {
+        let binary_name = "waybar-module-pomodoro_test";
+        let temp_dir = env::temp_dir();
+        let socket_path = temp_dir.join(binary_name);
+        println!("{:?}", socket_path);
+
+        File::create(&socket_path).unwrap();
+
+        let result = get_existing_sockets(binary_name);
+        assert!(result.contains(&socket_path.to_string_lossy().to_string()));
+
+        std::fs::remove_file(socket_path).unwrap();
+    }
 }

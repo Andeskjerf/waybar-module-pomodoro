@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     models::config::Config,
-    utils::consts::{MAX_ITERATIONS, SLEEP_TIME},
+    utils::consts::{LONG_BREAK_TIME, MAX_ITERATIONS, SHORT_BREAK_TIME, SLEEP_TIME, WORK_TIME},
 };
 
 use super::server::send_notification;
@@ -39,6 +39,19 @@ impl Timer {
         }
     }
 
+    pub fn default() -> Self {
+        Self {
+            current_index: 0,
+            elapsed_millis: 0,
+            elapsed_time: 0,
+            times: [WORK_TIME, SHORT_BREAK_TIME, LONG_BREAK_TIME],
+            iterations: 0,
+            session_completed: 0,
+            running: false,
+            socket_nr: 0,
+        }
+    }
+
     pub fn reset(&mut self) {
         self.current_index = 0;
         self.elapsed_time = 0;
@@ -51,6 +64,14 @@ impl Timer {
         self.current_index != 0
     }
 
+    pub fn get_time(&self, cycle: CycleType) -> u16 {
+        match cycle {
+            CycleType::Work => self.times[0],
+            CycleType::ShortBreak => self.times[1],
+            CycleType::LongBreak => self.times[2],
+        }
+    }
+
     pub fn set_time(&mut self, cycle: CycleType, input: u16) {
         self.reset();
 
@@ -59,6 +80,7 @@ impl Timer {
             CycleType::ShortBreak => self.times[1] = input * 60,
             CycleType::LongBreak => self.times[2] = input * 60,
         }
+        println!("{:?}", self.times);
     }
 
     pub fn get_class(&self) -> String {
@@ -147,15 +169,9 @@ mod tests {
 
     use super::*;
 
-    fn create_timer() -> Timer {
-        let socket_nr = 1;
-
-        Timer::new(WORK_TIME, SHORT_BREAK_TIME, LONG_BREAK_TIME, socket_nr)
-    }
-
     #[test]
     fn test_new_timer() {
-        let timer = create_timer();
+        let timer = Timer::default();
 
         assert_eq!(timer.current_index, 0);
         assert_eq!(timer.elapsed_millis, 0);
@@ -168,7 +184,7 @@ mod tests {
 
     #[test]
     fn test_reset_timer() {
-        let mut timer = create_timer();
+        let mut timer = Timer::default();
         timer.current_index = 2;
         timer.elapsed_millis = 999;
         timer.elapsed_time = WORK_TIME - 1;
@@ -187,7 +203,7 @@ mod tests {
 
     #[test]
     fn test_is_break() {
-        let mut timer = create_timer();
+        let mut timer = Timer::default();
 
         assert!(!timer.is_break());
 
@@ -197,7 +213,7 @@ mod tests {
 
     #[test]
     fn test_set_time() {
-        let mut timer = create_timer();
+        let mut timer = Timer::default();
 
         timer.set_time(CycleType::Work, 30);
         assert_eq!(timer.times[0], 30 * 60);
@@ -211,7 +227,7 @@ mod tests {
 
     #[test]
     fn test_get_class() {
-        let mut timer = create_timer();
+        let mut timer = Timer::default();
 
         assert_eq!(timer.get_class(), "");
 
@@ -228,7 +244,7 @@ mod tests {
 
     #[test]
     fn test_update_state() {
-        let mut timer = create_timer();
+        let mut timer = Timer::default();
         let config = Config::default();
 
         // set to low times so the test passes faster
@@ -271,7 +287,7 @@ mod tests {
 
     #[test]
     fn test_increment_elapsed_time() {
-        let mut timer = create_timer();
+        let mut timer = Timer::default();
 
         assert_eq!(timer.elapsed_millis, 0);
         assert_eq!(timer.elapsed_time, 0);
