@@ -23,7 +23,7 @@ use super::{
 };
 
 pub fn send_notification(cycle_type: CycleType) {
-    match Notification::new()
+    if let Err(e) = Notification::new()
         .summary("Pomodoro")
         .body(match cycle_type {
             CycleType::Work => "Time to work!",
@@ -32,9 +32,8 @@ pub fn send_notification(cycle_type: CycleType) {
         })
         .show()
     {
-        Ok(_) => {}
-        Err(_) => panic!("Failed to send notification"),
-    };
+        println!("err: send_notification, err == {e}");
+    }
 }
 
 fn format_time(elapsed_time: u16, max_time: u16) -> String {
