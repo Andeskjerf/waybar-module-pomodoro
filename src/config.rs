@@ -1,7 +1,10 @@
 use crate::{
-    BREAK_ICON, LONG_BREAK_TIME, MINUTE, PAUSE_ICON, PLAY_ICON, SHORT_BREAK_TIME, WORK_ICON,
-    WORK_TIME,
+    models::message::Message, BREAK_ICON, LONG_BREAK_TIME, MINUTE, PAUSE_ICON, PLAY_ICON,
+    SHORT_BREAK_TIME, WORK_ICON, WORK_TIME,
 };
+
+pub const OPERATIONS: [&str; 4] = ["toggle", "start", "stop", "reset"];
+pub const SET_OPERATIONS: [&str; 3] = ["set-work", "set-short", "set-long"];
 
 pub struct Config {
     pub work_time: u16,
@@ -21,8 +24,6 @@ pub struct Config {
 
 impl Config {
     pub fn from_options(options: Vec<String>) -> Self {
-        // define & initialize the times with the default values
-        // need to be mut since we might change them based on user arguments
         let mut work_time: u16 = WORK_TIME;
         let mut short_break: u16 = SHORT_BREAK_TIME;
         let mut long_break: u16 = LONG_BREAK_TIME;
@@ -39,40 +40,38 @@ impl Config {
         let binary_path = options.first().unwrap();
         let binary_name = binary_path.split('/').last().unwrap().to_string();
 
-        options.iter().for_each(|opt| match opt.as_str() {
-            "-w" | "--work" => {
-                work_time = get_config_value(&options, vec!["-w", "--work"])
-                    .parse::<u16>()
-                    .expect("value is not a number")
-                    * MINUTE
+        for opt in options.iter() {
+            match opt.as_str() {
+                "-w" | "--work" => {
+                    work_time = get_config_value_except(&options, opt)
+                        .parse::<u16>()
+                        .expect("value is not a number")
+                        * MINUTE
+                }
+                "-s" | "--shortbreak" => {
+                    short_break = get_config_value_except(&options, opt)
+                        .parse::<u16>()
+                        .expect("value is not a number")
+                        * MINUTE
+                }
+                "-l" | "--longbreak" => {
+                    long_break = get_config_value_except(&options, opt)
+                        .parse::<u16>()
+                        .expect("value is not a number")
+                        * MINUTE
+                }
+                "-p" | "--play" => play_icon = get_config_value_except(&options, opt).clone(),
+                "-a" | "--pause" => pause_icon = get_config_value_except(&options, opt),
+                "-o" | "--work-icon" => work_icon = get_config_value_except(&options, opt),
+                "-b" | "--break-icon" => break_icon = get_config_value_except(&options, opt),
+                "--autow" => autow = true,
+                "--autob" => autob = true,
+                "--persist" => persist = true,
+                "--no-icons" => no_icons = true,
+                "--no-work-icons" => no_work_icons = true,
+                _ => (),
             }
-            "-s" | "--shortbreak" => {
-                short_break = get_config_value(&options, vec!["-s", "--shortbreak"])
-                    .parse::<u16>()
-                    .expect("value is not a number")
-                    * MINUTE
-            }
-            "-l" | "--longbreak" => {
-                long_break = get_config_value(&options, vec!["-l", "--longbreak"])
-                    .parse::<u16>()
-                    .expect("value is not a number")
-                    * MINUTE
-            }
-            "-p" | "--play" => play_icon = get_config_value(&options, vec!["-p", "--play"]),
-            "-a" | "--pause" => pause_icon = get_config_value(&options, vec!["-a", "--pause"]),
-            "-o" | "--work-icon" => {
-                work_icon = get_config_value(&options, vec!["-o", "--work-icon"])
-            }
-            "-b" | "--break-icon" => {
-                break_icon = get_config_value(&options, vec!["-b", "--break-icon"])
-            }
-            "--autow" => autow = true,
-            "--autob" => autob = true,
-            "--persist" => persist = true,
-            "--no-icons" => no_icons = true,
-            "--no-work-icons" => no_work_icons = true,
-            _ => (),
-        });
+        }
 
         Self {
             work_time,
@@ -116,11 +115,39 @@ impl Config {
     }
 }
 
-fn get_config_value(options: &[String], keys: Vec<&str>) -> String {
-    let index = options
-        .iter()
-        .position(|x| keys.contains(&x.as_str()))
-        .expect("option specified but no value followed");
+fn get_config_value_except(options: &[String], opt: &str) -> String {
+    get_config_value(options, vec![opt])
+        .unwrap_or_else(|| panic!("err: {opt} specified but no value was provided"))
+        .clone()
+}
 
-    options[index + 1].to_owned()
+pub fn get_config_value<'a>(options: &'a [String], keys: Vec<&'a str>) -> Option<&'a String> {
+    match options.iter().position(|x| keys.contains(&x.as_str())) {
+        Some(index) => options.get(index + 1).to_owned(),
+        None => None,
+    }
+}
+
+pub fn parse_set_operations(args: Vec<String>) -> Vec<Message> {
+    let mut set_operation: Vec<Message> = vec![];
+    for elem in SET_OPERATIONS {
+        if !args.contains(&elem.to_string()) {
+            continue;
+        }
+
+        let val = get_config_value(&args, vec![elem]);
+        if val.is_none() {
+            continue;
+        }
+
+        let val = val.unwrap();
+        if let Ok(val) = val.parse::<i32>() {
+            if val > 0 {
+                set_operation.push(Message::new(elem, val));
+            } else {
+                println!("{elem}: value must be higher than 0, ignoring");
+            }
+        }
+    }
+    set_operation
 }

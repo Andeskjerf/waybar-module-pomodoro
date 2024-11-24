@@ -66,6 +66,10 @@ usage: waybar-module-pomodoro [options] [operation]
         start                       Start the timer
         stop                        Stop the timer
         reset                       Reset timer to initial state
+
+        set-work <value>            Set new work time
+        set-short <value>           Set new short break time
+        set-long <value>            Set new long break time
 ```
 
 ## CSS Styling

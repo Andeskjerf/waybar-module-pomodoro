@@ -1,4 +1,5 @@
-use config::Config;
+use config::{parse_set_operations, Config, OPERATIONS};
+use models::message::Message;
 use notify_rust::Notification;
 use signal_hook::{
     consts::{SIGHUP, SIGINT, SIGTERM},
@@ -16,6 +17,7 @@ use std::{
 };
 
 mod config;
+mod models;
 mod utils;
 mod cache;
 
@@ -31,6 +33,7 @@ const PAUSE_ICON: &str = "⏸";
 const WORK_ICON: &str = "󰔟";
 const BREAK_ICON: &str = "";
 
+#[derive(Debug)]
 enum CycleType {
     Work,
     ShortBreak,
@@ -73,6 +76,16 @@ impl State {
 
     fn is_break(&self) -> bool {
         self.current_index != 0
+    }
+
+    fn set_time(&mut self, cycle: CycleType, input: u16) {
+        self.reset();
+
+        match cycle {
+            CycleType::Work => self.times[0] = input * 60,
+            CycleType::ShortBreak => self.times[1] = input * 60,
+            CycleType::LongBreak => self.times[2] = input * 60,
+        }
     }
 
     fn update_state(&mut self, config: &Config) {
@@ -184,6 +197,35 @@ fn get_class(state: &State) -> String {
     }
 }
 
+fn process_message(state: &mut State, message: &str) {
+    if let Ok(msg) = Message::decode(message) {
+        match msg.name() {
+            "set-work" => state.set_time(CycleType::Work, msg.value() as u16),
+            "set-short" => state.set_time(CycleType::ShortBreak, msg.value() as u16),
+            "set-long" => state.set_time(CycleType::LongBreak, msg.value() as u16),
+            _ => println!("err: invalid command, {}", msg.name()),
+        }
+    } else {
+        match message {
+            "start" => {
+                state.running = true;
+            }
+            "stop" => {
+                state.running = false;
+            }
+            "toggle" => {
+                state.running = !state.running;
+            }
+            "reset" => {
+                state.reset();
+            }
+            _ => {
+                println!("Unknown message: {}", message);
+            }
+        }
+    }
+}
+
 fn handle_client(rx: Receiver<String>, socket_path: String, config: Config) {
     let socket_nr = socket_path
         .chars()
@@ -203,23 +245,7 @@ fn handle_client(rx: Receiver<String>, socket_path: String, config: Config) {
 
     loop {
         if let Ok(message) = rx.try_recv() {
-            match message.as_str() {
-                "start" => {
-                    state.running = true;
-                }
-                "stop" => {
-                    state.running = false;
-                }
-                "toggle" => {
-                    state.running = !state.running;
-                }
-                "reset" => {
-                    state.reset();
-                }
-                _ => {
-                    println!("Unknown message: {}", message);
-                }
-            }
+            process_message(&mut state, &message);
         }
 
         let value = format_time(state.elapsed_time, state.get_current_time());
@@ -278,11 +304,12 @@ fn spawn_server(socket_path: &str, config: Config) {
                 stream
                     .read_to_string(&mut message)
                     .expect("Failed to read UNIX stream");
+
                 if message.contains("exit") {
                     delete_socket(socket_path);
                     break;
                 }
-                tx.send(message.clone()).unwrap();
+                tx.send(message.to_string()).unwrap();
             }
             Err(err) => println!("Error: {}", err),
         }
@@ -329,9 +356,6 @@ fn process_signals(socket_path: String) {
 }
 
 fn main() -> std::io::Result<()> {
-    // valid operations
-    let operations = ["toggle", "start", "stop", "reset"];
-
     let options = env::args().collect::<Vec<String>>();
     if options.contains(&"--help".to_string()) || options.contains(&"-h".to_string()) {
         print_help();
@@ -355,10 +379,12 @@ fn main() -> std::io::Result<()> {
     );
 
     let operation = env::args()
-        .filter(|x| operations.contains(&x.as_str()))
+        .filter(|x| OPERATIONS.contains(&x.as_str()))
         .collect::<Vec<String>>();
 
-    if operation.is_empty() {
+    let set_operation = parse_set_operations(env::args().collect::<Vec<String>>());
+
+    if operation.is_empty() && set_operation.is_empty() {
         sockets.push(socket_path.clone());
         process_signals(socket_path.clone());
         spawn_server(&socket_path, config);
@@ -366,10 +392,18 @@ fn main() -> std::io::Result<()> {
     }
 
     for socket in sockets {
-        match send_message_socket(&socket, &operation[0]) {
-            Ok(_) => {}
-            Err(_) => println!("warn: failed to connect to {}", socket),
-        };
+        if !operation.is_empty() {
+            match send_message_socket(&socket, &operation[0]) {
+                Ok(_) => {}
+                Err(_) => println!("warn: failed to connect to {}", socket),
+            };
+        }
+        for msg in &set_operation {
+            match send_message_socket(&socket, &msg.encode()) {
+                Ok(_) => {}
+                Err(_) => println!("warn: failed to connect to {}", socket),
+            };
+        }
     }
     Ok(())
 }
@@ -400,7 +434,11 @@ fn print_help() {
         toggle                      Toggles the timer
         start                       Start the timer
         stop                        Stop the timer
-        reset                       Reset timer to initial state"#,
+        reset                       Reset timer to initial state
+
+        set-work <value>            Set new work time
+        set-short <value>           Set new short break time
+        set-long <value>            Set new long break time"#,
         WORK_TIME / MINUTE,
         SHORT_BREAK_TIME / MINUTE,
         LONG_BREAK_TIME / MINUTE,

@@ -29,7 +29,7 @@ pub(crate) fn restore(state: &mut State, config: &Config) -> io::Result<()> {
     let json: serde_json::Value = serde_json::from_reader(file)?;
     let restored: State = serde_json::from_value(json)?;
 
-    if match_timers(&config, &restored.times) {
+    if match_timers(config, &restored.times) {
         state.current_index = restored.current_index;
         state.elapsed_millis = restored.elapsed_millis;
         state.elapsed_time = restored.elapsed_time;
