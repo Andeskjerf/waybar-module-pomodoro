@@ -1,4 +1,5 @@
-use config::Config;
+use config::{parse_set_operations, Config, OPERATIONS};
+use models::message::Message;
 use notify_rust::Notification;
 use signal_hook::{
     consts::{SIGHUP, SIGINT, SIGTERM},
@@ -15,6 +16,7 @@ use std::{
 };
 
 mod config;
+mod models;
 mod utils;
 
 const SLEEP_TIME: u16 = 100;
@@ -318,10 +320,6 @@ fn process_signals(socket_path: String) {
 }
 
 fn main() -> std::io::Result<()> {
-    // valid operations
-    let operations = ["toggle", "start", "stop", "reset"];
-    let set_operations = ["set-work", "set-short", "set-long"];
-
     let options = env::args().collect::<Vec<String>>();
     if options.contains(&"--help".to_string()) || options.contains(&"-h".to_string()) {
         print_help();
@@ -345,7 +343,7 @@ fn main() -> std::io::Result<()> {
     );
 
     let operation = env::args()
-        .filter(|x| operations.contains(&x.as_str()))
+        .filter(|x| OPERATIONS.contains(&x.as_str()))
         .collect::<Vec<String>>();
 
     if operation.is_empty() {
@@ -361,6 +359,7 @@ fn main() -> std::io::Result<()> {
             Err(_) => println!("warn: failed to connect to {}", socket),
         };
     }
+    let set_operation = parse_set_operations(env::args().collect::<Vec<String>>());
     Ok(())
 }
 
