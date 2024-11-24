@@ -13,7 +13,7 @@ pub enum CycleType {
     LongBreak,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct Timer {
     pub current_index: usize,
     pub elapsed_millis: u16,
@@ -22,7 +22,7 @@ pub struct Timer {
     pub iterations: u8,
     pub session_completed: u8,
     pub running: bool,
-    socket_nr: i32,
+    pub socket_nr: i32,
 }
 
 impl Timer {
