@@ -41,26 +41,29 @@ impl Config {
         let binary_name = binary_path.split('/').last().unwrap().to_string();
 
         for opt in options.iter() {
-            let val = get_config_value(&options, vec![opt]);
-            if val.is_none() {
-                continue;
-            }
-
-            let val = val.unwrap().clone();
             match opt.as_str() {
                 "-w" | "--work" => {
-                    work_time = val.parse::<u16>().expect("value is not a number") * MINUTE
+                    work_time = get_config_value_except(&options, opt)
+                        .parse::<u16>()
+                        .expect("value is not a number")
+                        * MINUTE
                 }
                 "-s" | "--shortbreak" => {
-                    short_break = val.parse::<u16>().expect("value is not a number") * MINUTE
+                    short_break = get_config_value_except(&options, opt)
+                        .parse::<u16>()
+                        .expect("value is not a number")
+                        * MINUTE
                 }
                 "-l" | "--longbreak" => {
-                    long_break = val.parse::<u16>().expect("value is not a number") * MINUTE
+                    long_break = get_config_value_except(&options, opt)
+                        .parse::<u16>()
+                        .expect("value is not a number")
+                        * MINUTE
                 }
-                "-p" | "--play" => play_icon = val,
-                "-a" | "--pause" => pause_icon = val,
-                "-o" | "--work-icon" => work_icon = val,
-                "-b" | "--break-icon" => break_icon = val,
+                "-p" | "--play" => play_icon = get_config_value_except(&options, opt).clone(),
+                "-a" | "--pause" => pause_icon = get_config_value_except(&options, opt),
+                "-o" | "--work-icon" => work_icon = get_config_value_except(&options, opt),
+                "-b" | "--break-icon" => break_icon = get_config_value_except(&options, opt),
                 "--autow" => autow = true,
                 "--autob" => autob = true,
                 "--persist" => persist = true,
@@ -110,6 +113,12 @@ impl Config {
             &self.break_icon
         }
     }
+}
+
+fn get_config_value_except(options: &[String], opt: &str) -> String {
+    get_config_value(options, vec![opt])
+        .unwrap_or_else(|| panic!("err: {opt} specified but no value was provided"))
+        .clone()
 }
 
 pub fn get_config_value<'a>(options: &'a [String], keys: Vec<&'a str>) -> Option<&'a String> {
