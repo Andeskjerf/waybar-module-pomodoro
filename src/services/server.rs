@@ -257,37 +257,37 @@ mod tests {
 
     #[test]
     fn test_process_message_set_work() {
-        let mut state = create_timer();
-        process_message(&mut state, &Message::new("set-work", 30).encode());
-        assert_eq!(get_time(&state, CycleType::Work), 30 * MINUTE);
+        let mut timer = create_timer();
+        process_message(&mut timer, &Message::new("set-work", 30).encode());
+        assert_eq!(get_time(&timer, CycleType::Work), 30 * MINUTE);
     }
 
     #[test]
     fn test_process_message_set_short() {
-        let mut state = create_timer();
-        process_message(&mut state, &Message::new("set-short", 3).encode());
-        assert_eq!(get_time(&state, CycleType::ShortBreak), 3 * MINUTE);
+        let mut timer = create_timer();
+        process_message(&mut timer, &Message::new("set-short", 3).encode());
+        assert_eq!(get_time(&timer, CycleType::ShortBreak), 3 * MINUTE);
     }
 
     #[test]
     fn test_process_message_set_long() {
-        let mut state = create_timer();
-        process_message(&mut state, &Message::new("set-long", 10).encode());
-        assert_eq!(get_time(&state, CycleType::LongBreak), 10 * MINUTE);
+        let mut timer = create_timer();
+        process_message(&mut timer, &Message::new("set-long", 10).encode());
+        assert_eq!(get_time(&timer, CycleType::LongBreak), 10 * MINUTE);
     }
 
     #[test]
     fn test_process_message_start() {
-        let mut state = create_timer();
-        process_message(&mut state, "start");
-        assert!(state.running);
+        let mut timer = create_timer();
+        process_message(&mut timer, "start");
+        assert!(timer.running);
     }
 
     #[test]
     fn test_process_message_stop() {
-        let mut state = create_timer();
-        process_message(&mut state, "stop");
-        assert!(!state.running);
+        let mut timer = create_timer();
+        process_message(&mut timer, "stop");
+        assert!(!timer.running);
     }
 
     // TODO:
@@ -320,7 +320,6 @@ mod tests {
         let binary_name = "waybar-module-pomodoro_test";
         let temp_dir = env::temp_dir();
         let socket_path = temp_dir.join(binary_name);
-        println!("{:?}", socket_path);
 
         File::create(&socket_path).unwrap();
 
