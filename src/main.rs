@@ -1,5 +1,5 @@
 use models::config::{parse_set_operations, Config, OPERATIONS};
-use services::server::{get_existing_sockets, process_signals, send_message_socket, spawn_server};
+use services::server::{get_existing_sockets, send_message_socket, spawn_server};
 use signal_hook::{
     consts::{SIGHUP, SIGINT, SIGTERM},
     iterator::Signals,
