@@ -2,9 +2,10 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     models::config::Config,
-    send_notification,
     utils::consts::{MAX_ITERATIONS, SLEEP_TIME},
 };
+
+use super::server::send_notification;
 
 pub enum CycleType {
     Work,
@@ -57,6 +58,31 @@ impl Timer {
             CycleType::Work => self.times[0] = input * 60,
             CycleType::ShortBreak => self.times[1] = input * 60,
             CycleType::LongBreak => self.times[2] = input * 60,
+        }
+    }
+
+    pub fn get_class(&self) -> String {
+        // timer hasn't been started yet
+        if self.elapsed_millis == 0
+            && self.elapsed_time == 0
+            && self.iterations == 0
+            && self.session_completed == 0
+        {
+            "".to_owned()
+        }
+        // timer has been paused
+        else if !self.running {
+            "pause".to_owned()
+        }
+        // currently doing some work
+        else if !self.is_break() {
+            "work".to_owned()
+        }
+        // currently a break
+        else if self.is_break() {
+            "break".to_owned()
+        } else {
+            panic!("invalid condition occurred while setting class!");
         }
     }
 
