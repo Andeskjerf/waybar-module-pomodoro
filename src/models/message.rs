@@ -1,7 +1,8 @@
-use std::num::ParseIntError;
+use std::error::Error;
 
 use regex::Regex;
 
+#[derive(Debug)]
 pub struct Message {
     name: String,
     value: i32,
@@ -15,17 +16,26 @@ impl Message {
         }
     }
 
-    pub fn decode(input: &str) -> Result<Self, ParseIntError> {
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    pub fn value(&self) -> i32 {
+        self.value
+    }
+
+    pub fn decode(input: &str) -> Result<Self, Box<dyn Error>> {
         let re = Regex::new(r"\[(.*?)\;(.*?)\]").unwrap();
-
-        let mut name = String::new();
-        let mut value = -1;
-        for (_, [_name, _value]) in re.captures_iter(input).map(|c| c.extract()) {
-            name = String::from(_name);
-            value = _value.parse()?;
+        match re.captures(input) {
+            Some(caps) => {
+                let extracted: (&str, [&str; 2]) = caps.extract();
+                Ok(Self {
+                    name: extracted.1[0].to_string(),
+                    value: extracted.1[1].parse()?,
+                })
+            }
+            None => Err(format!("unable to decode message: {input}").into()),
         }
-
-        Ok(Self { name, value })
     }
 
     pub fn encode(&self) -> String {
