@@ -60,8 +60,8 @@ fn cache_dir() -> Result<PathBuf, Box<dyn Error>> {
     };
 
     dir.push(MODULE);
-    if !dir.is_dir() {
-        std::fs::create_dir(&dir)?;
+    if let Err(e) = std::fs::create_dir_all(&dir) {
+        println!("create_dir: path == {:?}, err == {e}", dir);
     }
     Ok(dir)
 }
