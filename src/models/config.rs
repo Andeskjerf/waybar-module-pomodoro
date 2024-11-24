@@ -333,7 +333,7 @@ mod tests {
 
     #[test]
     fn test_parse_set_operations_missing_values() {
-        let args = vec!["work".to_string()];
+        let args = vec!["set-work".to_string()];
         let operations = parse_set_operations(args);
 
         assert_eq!(operations.len(), 0);
