@@ -211,6 +211,14 @@ mod tests {
         Timer::new(WORK_TIME, SHORT_BREAK_TIME, LONG_BREAK_TIME, 0)
     }
 
+    fn get_time(timer: &Timer, cycle: CycleType) -> u16 {
+        match cycle {
+            CycleType::Work => timer.times[0],
+            CycleType::ShortBreak => timer.times[1],
+            CycleType::LongBreak => timer.times[2],
+        }
+    }
+
     #[test]
     fn test_send_notification_work() {
         send_notification(CycleType::Work);
@@ -251,21 +259,21 @@ mod tests {
     fn test_process_message_set_work() {
         let mut state = create_timer();
         process_message(&mut state, &Message::new("set-work", 30).encode());
-        assert_eq!(state.get_time(CycleType::Work), 30 * MINUTE);
+        assert_eq!(get_time(&state, CycleType::Work), 30 * MINUTE);
     }
 
     #[test]
     fn test_process_message_set_short() {
         let mut state = create_timer();
         process_message(&mut state, &Message::new("set-short", 3).encode());
-        assert_eq!(state.get_time(CycleType::ShortBreak), 3 * MINUTE);
+        assert_eq!(get_time(&state, CycleType::ShortBreak), 3 * MINUTE);
     }
 
     #[test]
     fn test_process_message_set_long() {
         let mut state = create_timer();
         process_message(&mut state, &Message::new("set-long", 10).encode());
-        assert_eq!(state.get_time(CycleType::LongBreak), 10 * MINUTE);
+        assert_eq!(get_time(&state, CycleType::LongBreak), 10 * MINUTE);
     }
 
     #[test]

@@ -51,14 +51,6 @@ impl Timer {
         self.current_index != 0
     }
 
-    pub fn get_time(&self, cycle: CycleType) -> u16 {
-        match cycle {
-            CycleType::Work => self.times[0],
-            CycleType::ShortBreak => self.times[1],
-            CycleType::LongBreak => self.times[2],
-        }
-    }
-
     pub fn set_time(&mut self, cycle: CycleType, input: u16) {
         self.reset();
 
