@@ -6,6 +6,7 @@ use crate::{
 pub const OPERATIONS: [&str; 4] = ["toggle", "start", "stop", "reset"];
 pub const SET_OPERATIONS: [&str; 3] = ["set-work", "set-short", "set-long"];
 
+#[derive(Default)]
 pub struct Config {
     pub work_time: u16,
     pub short_break: u16,
