@@ -13,7 +13,7 @@ use crate::{
     models::{config::Config, message::Message},
     utils::{
         self,
-        consts::{MINUTE, HOUR, SLEEP_DURATION},
+        consts::{HOUR, MINUTE, SLEEP_DURATION},
     },
 };
 
@@ -44,9 +44,9 @@ fn format_time(elapsed_time: u16, max_time: u16) -> String {
     let second = time % MINUTE;
 
     if hour > 0 {
-        return format!("{:02}:{:02}:{:02}", hour, minute, second)
+        return format!("{:02}:{:02}:{:02}", hour, minute, second);
     }
-    
+
     format!("{:02}:{:02}", minute, second)
 }
 
