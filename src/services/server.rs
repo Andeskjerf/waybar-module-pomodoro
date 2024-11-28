@@ -13,7 +13,7 @@ use crate::{
     models::{config::Config, message::Message},
     utils::{
         self,
-        consts::{MINUTE, SLEEP_DURATION},
+        consts::{MINUTE, HOUR, SLEEP_DURATION},
     },
 };
 
@@ -38,8 +38,15 @@ pub fn send_notification(cycle_type: CycleType) {
 
 fn format_time(elapsed_time: u16, max_time: u16) -> String {
     let time = max_time - elapsed_time;
-    let minute = time / MINUTE;
+
+    let hour = time / HOUR;
+    let minute = (time % HOUR) / MINUTE;
     let second = time % MINUTE;
+
+    if hour > 0 {
+        return format!("{:02}:{:02}:{:02}", hour, minute, second)
+    }
+    
     format!("{:02}:{:02}", minute, second)
 }
 
