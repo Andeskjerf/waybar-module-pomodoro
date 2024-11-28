@@ -3,6 +3,7 @@ use std::time::Duration;
 pub const SLEEP_TIME: u16 = 100;
 pub const SLEEP_DURATION: Duration = Duration::from_millis(SLEEP_TIME as u64);
 pub const MINUTE: u16 = 60;
+pub const HOUR: u16 = 60 * MINUTE;
 pub const MAX_ITERATIONS: u8 = 4;
 pub const WORK_TIME: u16 = 25 * MINUTE;
 pub const SHORT_BREAK_TIME: u16 = 5 * MINUTE;
