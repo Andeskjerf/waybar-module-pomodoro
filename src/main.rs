@@ -6,8 +6,8 @@ use signal_hook::{
 };
 use std::{env, thread};
 use utils::consts::{
-    BREAK_ICON, LONG_BREAK_TIME, MINUTE, PAUSE_ICON, PLAY_ICON, SHORT_BREAK_TIME, WORK_ICON,
-    WORK_TIME,
+    BREAK_ICON, LONG_BREAK_TIME, MAX_ITERATIONS, MINUTE, PAUSE_ICON, PLAY_ICON, SHORT_BREAK_TIME,
+    WORK_ICON, WORK_TIME,
 };
 
 mod models;
@@ -94,6 +94,7 @@ fn print_help() {
         -w, --work <value>          Sets how long a work cycle is, in minutes. default: {}
         -s, --shortbreak <value>    Sets how long a short break is, in minutes. default: {}
         -l, --longbreak <value>     Sets how long a long break is, in minutes. default: {}
+        -i, --intervals <value>     How many intervals there should be before a long break. default: {}
 
         -p, --play <value>          Sets custom play icon/text. default: {}
         -a, --pause <value>         Sets custom pause icon/text. default: {}
@@ -119,6 +120,7 @@ fn print_help() {
         WORK_TIME / MINUTE,
         SHORT_BREAK_TIME / MINUTE,
         LONG_BREAK_TIME / MINUTE,
+        MAX_ITERATIONS,
         PLAY_ICON,
         PAUSE_ICON,
         WORK_ICON,
