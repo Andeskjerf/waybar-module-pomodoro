@@ -1,9 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    models::config::Config,
-    utils::consts::{MAX_ITERATIONS, SLEEP_TIME},
-};
+use crate::{models::config::Config, utils::consts::SLEEP_TIME};
 
 use super::server::send_notification;
 
@@ -89,14 +86,14 @@ impl Timer {
 
     pub fn update_state(&mut self, config: &Config) {
         if (self.times[self.current_index] - self.elapsed_time) == 0 {
-            // if we're on the third iteration and first work, then we want a long break
-            if self.current_index == 0 && self.iterations == MAX_ITERATIONS - 1 {
+            // if we're on the last interval and first work, then we want a long break
+            if self.current_index == 0 && self.iterations == config.intervals - 1 {
                 self.current_index = self.times.len() - 1;
-                self.iterations = MAX_ITERATIONS;
+                self.iterations = config.intervals;
             }
             // if we've had our long break, reset everything and start over
             else if self.current_index == self.times.len() - 1
-                && self.iterations == MAX_ITERATIONS
+                && self.iterations == config.intervals
             {
                 self.current_index = 0;
                 self.iterations = 0;
@@ -258,7 +255,7 @@ mod tests {
         timer.update_state(&config);
 
         // we need to trigger a long break
-        timer.iterations = MAX_ITERATIONS - 1;
+        timer.iterations = config.intervals - 1;
 
         // Update state after short break is completed
         for _ in 0..time * 1000 / SLEEP_TIME {

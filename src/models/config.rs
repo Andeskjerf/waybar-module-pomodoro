@@ -1,6 +1,6 @@
 use crate::{
-    models::message::Message, BREAK_ICON, LONG_BREAK_TIME, MINUTE, PAUSE_ICON, PLAY_ICON,
-    SHORT_BREAK_TIME, WORK_ICON, WORK_TIME,
+    models::message::Message, utils::consts::MAX_ITERATIONS, BREAK_ICON, LONG_BREAK_TIME, MINUTE,
+    PAUSE_ICON, PLAY_ICON, SHORT_BREAK_TIME, WORK_ICON, WORK_TIME,
 };
 
 pub const OPERATIONS: [&str; 4] = ["toggle", "start", "stop", "reset"];
@@ -10,6 +10,7 @@ pub struct Config {
     pub work_time: u16,
     pub short_break: u16,
     pub long_break: u16,
+    pub intervals: u8,
     pub no_icons: bool,
     pub no_work_icons: bool,
     pub play_icon: String,
@@ -28,6 +29,7 @@ impl Default for Config {
             work_time: Default::default(),
             short_break: Default::default(),
             long_break: Default::default(),
+            intervals: MAX_ITERATIONS,
             no_icons: Default::default(),
             no_work_icons: Default::default(),
             play_icon: PLAY_ICON.to_string(),
@@ -47,6 +49,7 @@ impl Config {
         let mut work_time: u16 = WORK_TIME;
         let mut short_break: u16 = SHORT_BREAK_TIME;
         let mut long_break: u16 = LONG_BREAK_TIME;
+        let mut intervals: u8 = MAX_ITERATIONS;
         let mut no_icons = false;
         let mut no_work_icons = false;
         let mut play_icon = PLAY_ICON.to_string();
@@ -83,6 +86,13 @@ impl Config {
                         Err(_) => println!("err: invalid value for {opt}. val == {unparsed}"),
                     }
                 }
+                "-i" | "--intervals" => {
+                    let unparsed = get_config_value_except(&options, opt);
+                    match unparsed.parse::<u8>() {
+                        Ok(val) => intervals = val,
+                        Err(_) => println!("err: invalid value for {opt}. val == {unparsed}"),
+                    }
+                }
                 "-p" | "--play" => play_icon = get_config_value_except(&options, opt).clone(),
                 "-a" | "--pause" => pause_icon = get_config_value_except(&options, opt),
                 "-o" | "--work-icon" => work_icon = get_config_value_except(&options, opt),
@@ -100,6 +110,7 @@ impl Config {
             work_time,
             short_break,
             long_break,
+            intervals,
             no_icons,
             no_work_icons,
             play_icon,
@@ -208,6 +219,8 @@ mod tests {
             "5".to_string(),
             "-l".to_string(),
             "15".to_string(),
+            "-i".to_string(),
+            "10".to_string(),
             "--play".to_string(),
             "▶️".to_string(),
             "--pause".to_string(),
@@ -224,6 +237,7 @@ mod tests {
         assert_eq!(config.work_time, 25 * MINUTE);
         assert_eq!(config.short_break, 5 * MINUTE);
         assert_eq!(config.long_break, 15 * MINUTE);
+        assert_eq!(config.intervals, 10);
         assert!(!config.no_icons);
         assert!(!config.no_work_icons);
         assert_eq!(config.play_icon, "▶️".to_string());
