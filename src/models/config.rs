@@ -61,7 +61,7 @@ impl Config {
         let mut persist = false;
 
         let binary_path = options.first().unwrap();
-        let binary_name = binary_path.split('/').last().unwrap().to_string();
+        let binary_name = binary_path.split('/').next_back().unwrap().to_string();
 
         for opt in options.iter() {
             match opt.as_str() {
