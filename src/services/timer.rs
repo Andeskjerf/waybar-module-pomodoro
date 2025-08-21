@@ -59,29 +59,28 @@ impl Timer {
         println!("{:?}", self.times);
     }
 
-    pub fn get_class(&self) -> String {
-        // timer hasn't been started yet
+    pub fn get_class(&self) -> Vec<String> {
+        let mut result = vec![];
+
         if self.elapsed_millis == 0
             && self.elapsed_time == 0
             && self.iterations == 0
             && self.session_completed == 0
         {
-            "".to_owned()
+            return result;
         }
-        // timer has been paused
-        else if !self.running {
-            "pause".to_owned()
+
+        if !self.running {
+            result.push("pause".to_owned());
         }
-        // currently doing some work
-        else if !self.is_break() {
-            "work".to_owned()
+
+        if !self.is_break() {
+            result.push("work".to_owned());
+        } else if self.is_break() {
+            result.push("break".to_owned());
         }
-        // currently a break
-        else if self.is_break() {
-            "break".to_owned()
-        } else {
-            panic!("invalid condition occurred while setting class!");
-        }
+
+        result
     }
 
     pub fn update_state(&mut self, config: &Config) {
@@ -211,17 +210,17 @@ mod tests {
     fn test_get_class() {
         let mut timer = create_timer();
 
-        assert_eq!(timer.get_class(), "");
+        assert_eq!(timer.get_class().len(), 0);
 
         timer.running = true;
         timer.elapsed_millis = 1;
-        assert_eq!(timer.get_class(), "work");
+        assert_eq!(timer.get_class(), ["work"]);
 
         timer.current_index = 1;
-        assert_eq!(timer.get_class(), "break");
+        assert_eq!(timer.get_class(), ["break"]);
 
         timer.running = false;
-        assert_eq!(timer.get_class(), "pause");
+        assert_eq!(timer.get_class(), ["pause", "break"]);
     }
 
     #[test]
