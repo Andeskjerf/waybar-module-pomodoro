@@ -50,10 +50,19 @@ fn format_time(elapsed_time: u16, max_time: u16) -> String {
     format!("{:02}:{:02}", minute, second)
 }
 
-fn create_message(value: String, tooltip: &str, class: &str) -> String {
+fn create_message(value: String, tooltip: &str, class: &[String]) -> String {
+    let class_json = format!(
+        "[{}]",
+        class
+            .iter()
+            .map(|c| format!("\"{}\"", c))
+            .collect::<Vec<String>>()
+            .join(",")
+    );
+
     format!(
-        "{{\"text\": \"{}\", \"tooltip\": \"{}\", \"class\": \"{}\", \"alt\": \"{}\"}}",
-        value, tooltip, class, class
+        "{{\"text\": \"{}\", \"tooltip\": \"{}\", \"class\": {}, \"alt\": \"{}\"}}",
+        value, tooltip, class_json, ""
     )
 }
 
@@ -251,12 +260,16 @@ mod tests {
     fn test_create_message() {
         let message = "Pomodoro";
         let tooltip = "Tooltip";
-        let class = "Class";
+        let class = vec!["Class".to_owned()];
 
-        let result = create_message(message.to_string(), tooltip, class);
+        let result = create_message(message.to_string(), tooltip, &class);
         let expected = format!(
             "{{\"text\": \"{}\", \"tooltip\": \"{}\", \"class\": \"{}\", \"alt\": \"{}\"}}",
-            message, tooltip, class, class
+            message,
+            tooltip,
+            // FIXME: yeah
+            class.first().unwrap(),
+            class.first().unwrap()
         );
         assert!(result == expected);
     }
