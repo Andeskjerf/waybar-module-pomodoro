@@ -264,12 +264,12 @@ mod tests {
 
         let result = create_message(message.to_string(), tooltip, &class);
         let expected = format!(
-            "{{\"text\": \"{}\", \"tooltip\": \"{}\", \"class\": \"{}\", \"alt\": \"{}\"}}",
+            "{{\"text\": \"{}\", \"tooltip\": \"{}\", \"class\": [\"{}\"], \"alt\": \"{}\"}}",
             message,
             tooltip,
             // FIXME: yeah
             class.first().unwrap(),
-            class.first().unwrap()
+            ""
         );
         assert!(result == expected);
     }
