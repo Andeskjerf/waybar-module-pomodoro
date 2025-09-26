@@ -66,7 +66,7 @@ fn create_message(value: String, tooltip: &str, class: &[String]) -> String {
     )
 }
 
-fn process_message(state: &mut Timer, message: &str) {
+fn process_message(state: &mut Timer, message: &str, config: &Config) {
     if let Ok(msg) = Message::decode(message) {
         match msg.name() {
             "set-work" => state.set_time(CycleType::Work, msg.value() as u16),
@@ -87,6 +87,9 @@ fn process_message(state: &mut Timer, message: &str) {
             }
             "reset" => {
                 state.reset();
+            }
+            "skip" => {
+                state.skip(&config);
             }
             _ => {
                 println!("Unknown message: {}", message);
@@ -114,7 +117,7 @@ fn handle_client(rx: Receiver<String>, socket_path: String, config: Config) {
 
     loop {
         if let Ok(message) = rx.try_recv() {
-            process_message(&mut state, &message);
+            process_message(&mut state, &message, &config);
         }
 
         let value = format_time(state.elapsed_time, state.get_current_time());
@@ -214,6 +217,7 @@ pub fn send_message_socket(socket_path: &str, msg: &str) -> Result<(), Error> {
 
 #[cfg(test)]
 mod tests {
+    use crate::models::config;
     use crate::LONG_BREAK_TIME;
     use crate::SHORT_BREAK_TIME;
     use fs::File;
@@ -277,36 +281,58 @@ mod tests {
     #[test]
     fn test_process_message_set_work() {
         let mut timer = create_timer();
-        process_message(&mut timer, &Message::new("set-work", 30).encode());
+        process_message(
+            &mut timer,
+            &Message::new("set-work", 30).encode(),
+            &Config::default(),
+        );
         assert_eq!(get_time(&timer, CycleType::Work), 30 * MINUTE);
     }
 
     #[test]
     fn test_process_message_set_short() {
         let mut timer = create_timer();
-        process_message(&mut timer, &Message::new("set-short", 3).encode());
+        process_message(
+            &mut timer,
+            &Message::new("set-short", 3).encode(),
+            &Config::default(),
+        );
         assert_eq!(get_time(&timer, CycleType::ShortBreak), 3 * MINUTE);
     }
 
     #[test]
     fn test_process_message_set_long() {
         let mut timer = create_timer();
-        process_message(&mut timer, &Message::new("set-long", 10).encode());
+        process_message(
+            &mut timer,
+            &Message::new("set-long", 10).encode(),
+            &Config::default(),
+        );
         assert_eq!(get_time(&timer, CycleType::LongBreak), 10 * MINUTE);
     }
 
     #[test]
     fn test_process_message_start() {
         let mut timer = create_timer();
-        process_message(&mut timer, "start");
+        process_message(&mut timer, "start", &Config::default());
         assert!(timer.running);
     }
 
     #[test]
     fn test_process_message_stop() {
         let mut timer = create_timer();
-        process_message(&mut timer, "stop");
+        process_message(&mut timer, "stop", &Config::default());
         assert!(!timer.running);
+    }
+
+    #[test]
+    fn test_process_message_skip() {
+        let mut timer = create_timer();
+        timer.current_index = timer.times.len() - 1;
+        let config = Config::default();
+        timer.iterations = config.intervals;
+        process_message(&mut timer, "skip", &config);
+        assert!((timer.session_completed == 1));
     }
 
     // TODO:
