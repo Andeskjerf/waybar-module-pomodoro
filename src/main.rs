@@ -113,6 +113,7 @@ fn print_help() {
         start                       Start the timer
         stop                        Stop the timer
         reset                       Reset timer to initial state
+        skip                        Skip to the next interval
 
         set-work <value>            Set new work time
         set-short <value>           Set new short break time
