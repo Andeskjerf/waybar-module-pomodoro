@@ -11,7 +11,7 @@ It follows the same rules as pomodoro: 4 cycles of work and short breaks, follow
 - compile & install binary
 
 ```bash
-git clone git@github.com:Andeskjerf/waybar-module-pomodoro.git
+git clone https://github.com/Andeskjerf/waybar-module-pomodoro.git
 cd waybar-module-pomodoro
 cargo build --release
 ```
