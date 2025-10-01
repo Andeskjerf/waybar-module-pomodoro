@@ -38,6 +38,20 @@ Include the module in your bar and you're set!
 
 You can check how many pomodoros you've completed this session by hovering the module and checking its tooltip.
 
+## Double click skip setup
+
+If you want to add the functionality to skip, you can utilize the double-click-handler.sh
+
+```json
+"custom/pomodoro": {
+	"format": "{}",
+	"return-type": "json",
+	"exec": "~/path/to/dobule-click-handler.sh",
+	"on-click": "waybar-module-pomodoro toggle",
+	"on-click-right": "waybar-module-pomodoro reset",
+},
+```
+
 # Options / arguments?
 
 ```
@@ -67,6 +81,7 @@ usage: waybar-module-pomodoro [options] [operation]
         start                       Start the timer
         stop                        Stop the timer
         reset                       Reset timer to initial state
+        skip                        Skip to the next interval
 
         set-work <value>            Set new work time
         set-short <value>           Set new short break time
