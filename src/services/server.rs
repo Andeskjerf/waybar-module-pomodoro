@@ -217,7 +217,6 @@ pub fn send_message_socket(socket_path: &str, msg: &str) -> Result<(), Error> {
 
 #[cfg(test)]
 mod tests {
-    use crate::models::config;
     use crate::LONG_BREAK_TIME;
     use crate::SHORT_BREAK_TIME;
     use fs::File;
@@ -317,7 +316,12 @@ mod tests {
     fn test_process_message_skip() {
         let mut timer = create_timer();
         timer.current_index = timer.times.len() - 1;
+
+        let config = Config::default();
+        timer.iterations = config.intervals;
+
         process_message(&mut timer, "skip");
+        timer.update_state(&config);
         assert!((timer.session_completed == 1));
     }
 
