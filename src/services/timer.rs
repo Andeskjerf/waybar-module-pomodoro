@@ -44,9 +44,8 @@ impl Timer {
         self.running = false;
     }
 
-    pub fn skip(&mut self, config: &Config) {
+    pub fn skip(&mut self) {
         self.elapsed_time = self.times[self.current_index];
-        self.update_state(&config);
     }
 
     pub fn is_break(&self) -> bool {
