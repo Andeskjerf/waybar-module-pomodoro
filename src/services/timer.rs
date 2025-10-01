@@ -44,6 +44,10 @@ impl Timer {
         self.running = false;
     }
 
+    pub fn skip(&mut self) {
+        self.elapsed_time = self.times[self.current_index];
+    }
+
     pub fn is_break(&self) -> bool {
         self.current_index != 0
     }
@@ -84,7 +88,7 @@ impl Timer {
     }
 
     pub fn update_state(&mut self, config: &Config) {
-        if (self.times[self.current_index] - self.elapsed_time) == 0 {
+        if (self.times[self.current_index] - self.elapsed_time) <= 0 {
             // if we're on the last interval and first work, then we want a long break
             if self.current_index == 0 && self.iterations == config.intervals - 1 {
                 self.current_index = self.times.len() - 1;

@@ -88,6 +88,9 @@ fn process_message(state: &mut Timer, message: &str) {
             "reset" => {
                 state.reset();
             }
+            "skip" => {
+                state.skip();
+            }
             _ => {
                 println!("Unknown message: {}", message);
             }
@@ -307,6 +310,19 @@ mod tests {
         let mut timer = create_timer();
         process_message(&mut timer, "stop");
         assert!(!timer.running);
+    }
+
+    #[test]
+    fn test_process_message_skip() {
+        let mut timer = create_timer();
+        timer.current_index = timer.times.len() - 1;
+
+        let config = Config::default();
+        timer.iterations = config.intervals;
+
+        process_message(&mut timer, "skip");
+        timer.update_state(&config);
+        assert!((timer.session_completed == 1));
     }
 
     // TODO:

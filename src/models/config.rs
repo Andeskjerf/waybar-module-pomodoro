@@ -3,7 +3,7 @@ use crate::{
     PAUSE_ICON, PLAY_ICON, SHORT_BREAK_TIME, WORK_ICON, WORK_TIME,
 };
 
-pub const OPERATIONS: [&str; 4] = ["toggle", "start", "stop", "reset"];
+pub const OPERATIONS: [&str; 5] = ["toggle", "start", "stop", "reset", "skip"];
 pub const SET_OPERATIONS: [&str; 3] = ["set-work", "set-short", "set-long"];
 
 pub struct Config {
